@@ -395,7 +395,13 @@ namespace ACONRP
             }
             return true;
         }
-
+        /// <summary>
+        /// Rimuove gli elementi precedenti ad un valore di input
+        /// </summary>
+        /// <param name="valueToRemove">Elemento di partenza da cui iniziare la rimozione</param>
+        /// <param name="indexesList">Lista di indici utilizzata per la generazione randomica</param>
+        /// <param name="numShiftTypes">Numero di tipi di shift</param>
+        /// <returns>Valore booleano che denota l'esecuzione o meno della rimozione</returns>
         private static bool removePreviousElements(int valueToRemove, List<int> indexesList, int numShiftTypes)
         {
             for (int j = 0; j < numShiftTypes; j++)
