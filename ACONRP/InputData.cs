@@ -32,7 +32,7 @@ namespace ACONRP
     public class Skills
     {
         [XmlElement(ElementName = "Skill")]
-        public string Skill { get; set; }
+        public List<string> Skill { get; set; }
     }
 
     [XmlRoot(ElementName = "Shift")]
@@ -289,7 +289,7 @@ namespace ACONRP
     public class Contracts
     {
         [XmlElement(ElementName = "Contract")]
-        public Contract Contract { get; set; }
+        public List<Contract> Contract { get; set; }
     }
 
     [XmlRoot(ElementName = "Employee")]
