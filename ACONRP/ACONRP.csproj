@@ -49,6 +49,39 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Instances\Sprint\sprint01.xml" />
+    <Content Include="Instances\Sprint\sprint02.xml" />
+    <Content Include="Instances\Sprint\sprint03.xml" />
+    <Content Include="Instances\Sprint\sprint04.xml" />
+    <Content Include="Instances\Sprint\sprint05.xml" />
+    <Content Include="Instances\Sprint\sprint06.xml" />
+    <Content Include="Instances\Sprint\sprint07.xml" />
+    <Content Include="Instances\Sprint\sprint08.xml" />
+    <Content Include="Instances\Sprint\sprint09.xml" />
+    <Content Include="Instances\Sprint\sprint10.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden01.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden02.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden03.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden04.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden05.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden06.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden07.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden08.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden09.xml" />
+    <Content Include="Instances\Sprint\sprint_hidden10.xml" />
+    <Content Include="Instances\Sprint\sprint_hint01.xml" />
+    <Content Include="Instances\Sprint\sprint_hint02.xml" />
+    <Content Include="Instances\Sprint\sprint_hint03.xml" />
+    <Content Include="Instances\Sprint\sprint_late01.xml" />
+    <Content Include="Instances\Sprint\sprint_late02.xml" />
+    <Content Include="Instances\Sprint\sprint_late03.xml" />
+    <Content Include="Instances\Sprint\sprint_late04.xml" />
+    <Content Include="Instances\Sprint\sprint_late05.xml" />
+    <Content Include="Instances\Sprint\sprint_late06.xml" />
+    <Content Include="Instances\Sprint\sprint_late07.xml" />
+    <Content Include="Instances\Sprint\sprint_late08.xml" />
+    <Content Include="Instances\Sprint\sprint_late09.xml" />
+    <Content Include="Instances\Sprint\sprint_late10.xml" />
     <Content Include="Instances\toy1.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -61,6 +94,10 @@
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Instances\Long\" />
+    <Folder Include="Instances\Medium\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
