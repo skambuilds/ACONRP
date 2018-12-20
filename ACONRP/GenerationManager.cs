@@ -12,7 +12,7 @@ namespace ACONRP
         private const string inputXmlFile = "Instances/toy1.xml";
 
         //Impostazione rapida dei dati di input ai fini di debug - ATTENZIONE! Da sostituire con i dati presenti nel data object
-        private static int numberOfNurses = 5;
+        public static int numberOfNurses { get; set; }
         private static int numShiftTypes = 4;
         private static int numOfDays = 7;
         private static int maxNumAssnt = 5;
@@ -22,6 +22,8 @@ namespace ACONRP
         private static int shiftsPerNumAssnt = 10;
         private static bool singleAssntPerDay = false;
         private static bool circularTimePeriod = false;
+
+        
 
         /// <summary>
         /// Procedura per l'avvio della funzione di generazione pattern e popolamento nodi
@@ -51,11 +53,12 @@ namespace ACONRP
             DateTime startDate = Convert.ToDateTime(InputData.GetObjectDataFromFile(inputXmlFile).StartDate);
             DateTime endDate = Convert.ToDateTime(InputData.GetObjectDataFromFile(inputXmlFile).EndDate);
             numOfDays = endDate.Day - startDate.Day + 1;
-            maxNumAssnt = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract.MaxNumAssignments.Text);
-            minNumAssnt = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract.MinNumAssignments.Text);
-            maxConsWorkDays = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract.MaxConsecutiveWorkingDays.Text);
-            minConsWorkDays = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract.MinConsecutiveWorkingDays.Text);
-            singleAssntPerDay = Convert.ToBoolean(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract.SingleAssignmentPerDay.Text);
+            //TODO: Impostare una array per memorizzare le caratteristiche del contratto
+            maxNumAssnt = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].MaxNumAssignments.Text);
+            minNumAssnt = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].MinNumAssignments.Text);
+            maxConsWorkDays = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].MaxConsecutiveWorkingDays.Text);
+            minConsWorkDays = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].MinConsecutiveWorkingDays.Text);
+            singleAssntPerDay = Convert.ToBoolean(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].SingleAssignmentPerDay.Text);
         }
 
         /// <summary>
