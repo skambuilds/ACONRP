@@ -9,6 +9,6 @@ namespace ACONRP
     class Ant
     {
         private int id;
-        private List<Node> solution;
+        public List<Node> Solution { get; set; }
     }
 }
