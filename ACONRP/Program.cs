@@ -23,7 +23,7 @@ namespace ACONRP
                       
         }
 
-        private static List<Node> ACOAlgorthm()
+        private static List<Node> ACOAlgorithm()
         {
             //Inizio algoritmo
             //***1.
