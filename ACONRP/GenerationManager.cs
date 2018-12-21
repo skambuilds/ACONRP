@@ -10,133 +10,161 @@ namespace ACONRP
     {
 
         private const string inputXmlFile = "Instances/toy1.xml";
-
-        //Impostazione rapida dei dati di input ai fini di debug - ATTENZIONE! Da sostituire con i dati presenti nel data object
-        public static int numberOfNurses { get; set; }
-        private static int numShiftTypes = 4;
-        private static int numOfDays = 7;
-        private static int maxNumAssnt = 5;
-        private static int minNumAssnt = 5;
-        private static int maxConsWorkDays = 2;
-        private static int minConsWorkDays = 2;
-        private static int shiftsPerNumAssnt = 10;
-        private static bool singleAssntPerDay = false;
-        private static bool circularTimePeriod = false;
-
-        
+        //private const string inputXmlFile = "Instances/Sprint/sprint01.xml"; TODO: Check and solve the problem with the tag "DayOffRequests"
 
         /// <summary>
-        /// Procedura per l'avvio della funzione di generazione pattern e popolamento nodi
+        /// Number of nurses
         /// </summary>
-        /// <returns>Un array di liste di nodi che contiene per ogni infermiere l'insieme dei nodi ad esso associato</returns>
+        public static int numberOfNurses { get; set; }
+        /// <summary>
+        /// Number of shift types
+        /// </summary>
+        private static int numShiftTypes = 4;
+        /// <summary>
+        /// Number of days to perform the shift assignment
+        /// </summary>
+        private static int numOfDays = 7;
+        /// <summary>
+        /// Maximum number of assignment in the considered time period
+        /// </summary>
+        private static int maxNumAssnt = 5;
+        /// <summary>
+        /// Minimum number of assignment in the considered time period
+        /// </summary>
+        private static int minNumAssnt = 5;
+        /// <summary>
+        /// Maximum number of consecutive working days which can be assigned
+        /// </summary>
+        private static int maxConsWorkDays = 2;
+        /// <summary>
+        /// Minimum number of consecutive working days which can be assigned
+        /// </summary>
+        private static int minConsWorkDays = 2;
+        /// <summary>
+        /// Number of desired shift patterns for each possible assignment value
+        /// </summary>
+        private static int shiftsPerNumAssnt = 10;
+        /// <summary>
+        /// Indicates if the single assignment per day option is active
+        /// </summary>
+        private static bool singleAssntPerDay = false;
+        /// <summary>
+        /// Indicates if the generation procedure considers a circular period of time
+        /// </summary>
+        private static bool circularTimePeriod = false;
+
+        /// <summary>
+        /// Launch mathod for the pattern generation function
+        /// </summary>
+        /// <returns>A lists of nodes array which contains for each nurse their set of nodes</returns>
         public static List<Node>[] PatternGenerationMethod()
         {
-            //Inizializzatore dati di input
-            InputDataInitializer();
+            GenericInputDataInitializer();
 
             List<Node>[] nodesPerNurse = new List<Node>[numberOfNurses];
             for (int i = 0; i < numberOfNurses; i++)
             {
-                //Inizializzazione generatore randomico
+                ContractDataInitializer(i);
+                //Random generator initialization
                 Random rnd = new Random(i);
-                nodesPerNurse[i] = ShiftPatternsGenerator(rnd, i, numShiftTypes, numOfDays, maxNumAssnt, minNumAssnt, maxConsWorkDays, shiftsPerNumAssnt, singleAssntPerDay, circularTimePeriod);
+                nodesPerNurse[i] = ShiftPatternsGenerator(rnd, i);
             }
             return nodesPerNurse;
         }
         /// <summary>
-        /// Procedura di inizializzazione dei dati di input tramite lettura file xml
+        /// Generic input data initializer procedure via xml file reading
         /// </summary>
-        private static void InputDataInitializer()
+        private static void GenericInputDataInitializer()
         {
             numberOfNurses = InputData.GetObjectDataFromFile(inputXmlFile).Employees.Employee.Count;
             numShiftTypes = InputData.GetObjectDataFromFile(inputXmlFile).ShiftTypes.Shift.Count;
             DateTime startDate = Convert.ToDateTime(InputData.GetObjectDataFromFile(inputXmlFile).StartDate);
             DateTime endDate = Convert.ToDateTime(InputData.GetObjectDataFromFile(inputXmlFile).EndDate);
             numOfDays = endDate.Day - startDate.Day + 1;
-            //TODO: Impostare una array per memorizzare le caratteristiche del contratto
-            maxNumAssnt = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].MaxNumAssignments.Text);
-            minNumAssnt = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].MinNumAssignments.Text);
-            maxConsWorkDays = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].MaxConsecutiveWorkingDays.Text);
-            minConsWorkDays = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].MinConsecutiveWorkingDays.Text);
-            singleAssntPerDay = Convert.ToBoolean(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[0].SingleAssignmentPerDay.Text);
+        }
+        /// <summary>
+        /// Employee's contract data initializer procedure
+        /// </summary>
+        /// <param name="employeeId">Employee Identifier</param>
+        private static void ContractDataInitializer(int employeeId)
+        {
+            //Retrieving the employee's contract identifier
+            int contractId = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Employees.Employee[employeeId].ContractID);
+            maxNumAssnt = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[contractId].MaxNumAssignments.Text);
+            minNumAssnt = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[contractId].MinNumAssignments.Text);
+            maxConsWorkDays = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[contractId].MaxConsecutiveWorkingDays.Text);
+            minConsWorkDays = Convert.ToInt16(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[contractId].MinConsecutiveWorkingDays.Text);
+            singleAssntPerDay = Convert.ToBoolean(InputData.GetObjectDataFromFile(inputXmlFile).Contracts.Contract[contractId].SingleAssignmentPerDay.Text);
         }
 
         /// <summary>
-        /// Funzione di creazione della lista degli shift pattern validi
+        /// Random shift pattern generation function
         /// </summary>
-        /// <param name="rnd">Generatore randomico</param>
-        /// <param name="nurseId">Identificativo infermiere da assegnare al nodo</param>
-        /// <param name="numShiftTypes">Numero di tipi di shift</param>
-        /// <param name="numOfDays">Numero di giorni in cui assegnare i turni</param>
-        /// <param name="maxNumAssnt">Numero massimo di assegnamenti nell'intervallo temporale considerato</param>
-        /// <param name="minNumAssnt">Numero minimo di assegnamenti nell'intervallo temporale considerato</param>
-        /// <param name="maxConsWorkDays">Numero massimo di giorni consecutivi di lavoro che è possibile assegnare</param>
-        /// <param name="shiftsPerNumAssnt">Numero di shift pattern desiderati per ogni valore di assegnamento</param>
-        /// <param name="singleAssntPerDay">Determina se vi può essere un solo turno assegnato al giorno</param>
-        /// <param name="circularTimePeriod">Determina se l'algoritmo si attiene ai vincoli oppure produce qualche shift pattern non valido</param>
-        /// <returns>Lista contenente un insieme di shift pattern, tutti diversi</returns>
-        private static List<Node> ShiftPatternsGenerator(Random rnd, int nurseId, int numShiftTypes, int numOfDays, int maxNumAssnt, int minNumAssnt, int maxConsWorkDays, int shiftsPerNumAssnt, bool singleAssntPerDay = true, bool circularTimePeriod = true)
+        /// <param name="rnd">Random generator</param>
+        /// <param name="nurseId">Nurse identifier which have to be assigned to the node</param>
+        /// <returns>Nodes list which contains the feasible shift patterns</returns>
+        private static List<Node> ShiftPatternsGenerator(Random rnd, int nurseId)
         {
-            //Numero totale degli shift presenti
+            //Total number of existing shifts
             int totalNumOfShifts = numShiftTypes * numOfDays;
-            //Lista contenente gli shift pattern validi
+            //Nodes list which contains the feasible shift patterns
             List<Node> nodesSet = new List<Node>();
-            //Lista di indici per la gestione della generazione randomica
+            //Indexes list used for managing the random generation activity
             List<int> indexesList = new List<int>();
-            //Lista contenente gli indici attivi in quanto non estratti randomicamente
+            //List of active indexes which have not been randomly extracted
             List<int> activeIndexes = new List<int>();
-            //Lista contenente gli indici rimossi in quanto estratti randomicamente
+            //List of removed indexes which have been randomly extracted
             List<int> actualRemovedElements = new List<int>();
-           
-            //Ciclo dal numero minimo al numero massimo di assegnamenti da effettuare
+
+            //Loop for each desired assignment value
             for (int i = minNumAssnt; i <= maxNumAssnt; i++)
             {
-                //Creo il numero richiesto di shift pattern
+                //Create the amount of needed shift patterns
                 for (int j = 0; j < shiftsPerNumAssnt; j++)
                 {
                     Node node = new Node();
-                    //Array di booleani che rappresenta il singolo shift pattern generato
+                    //Boolean array which will contain the randomly generated shift pattern
                     bool[] shiftPattern = new bool[totalNumOfShifts];
-                    //Valore di partenza per la comparazione con gli indici nella lista degli indici attivi
+                    //Starting value for the comparison with the values in the active indexes list
                     int baseComparisonValue = 0;
                     indexesList.Clear();
                     activeIndexes.Clear();
                     actualRemovedElements.Clear();
 
-                    //Procedure di inizializzazioe della liste
                     IndexesListInitializer(indexesList, totalNumOfShifts, 0);
                     IndexesListInitializer(activeIndexes, totalNumOfShifts, 0);
 
-                    //Itero fino a raggiungere il numero di assegnamenti specificato nel primo ciclo esterno
+                    //Perform a number of iteration to reach the number of assignment specified in the first for loop
                     for (int k = 0; k < i; k++)
                     {
-                        //Effettuo il controllo sul numero massimo di giorni consecutivi di lavoro e rimuovo della lista degli indici i giorni che possono determinare una violazione
-                        RemoveConsecutiveDays(ref baseComparisonValue, indexesList, numShiftTypes, maxConsWorkDays, numOfDays, actualRemovedElements, activeIndexes, circularTimePeriod);
+                        //Check the maximum consecutive working days value and remove from the indexes list the days indexes which can determine a violation
+                        RemoveConsecutiveDays(ref baseComparisonValue, indexesList, actualRemovedElements, activeIndexes);
 
-                        //Controllo di errore per circularTimePeriod = true 
+                        //Error checker circularTimePeriod = true 
                         //if (k == 4 && indexesList.Count > 0)
                         //{
                         //    Console.WriteLine("Errore! Attenzione!");
                         //    PrintSingleShiftPattern(shiftPattern, numShiftTypes, k);
                         //}
 
-                        //Funzione di assegnamento randomico di un turno
-                        List<int> removedElements = RandomShiftAssigner(rnd, indexesList, shiftPattern, numShiftTypes, singleAssntPerDay);
-                        //Procedure di rimozione e aggiunta degli elemnti alle liste di controllo
+                        List<int> removedElements = RandomShiftAssigner(rnd, indexesList, shiftPattern);
+                        //Add and remove the randomly extracted elements from the respective control lists
                         RemoveElementsToTotalList(removedElements, activeIndexes);
                         AddElementsToTotalList(removedElements, actualRemovedElements);
                     }
-                    //Controllo che il pattern appena generato non sia già presente nella lista
+                    //Check if the last generated pattern is already in the node list
                     if (!(listContainsPattern(nodesSet, shiftPattern)))
                     {
-                        //PrintSingleShiftPattern(shiftPattern, numShiftTypes, j);
+                        bool[,] shiftPatternMatrix = ArrayToMatrixConverter(shiftPattern);
+                        PrintSingleShiftPattern(shiftPattern, j);
+                        PrintSingleShiftPattern(shiftPatternMatrix, j);
                         node.Index = j;
                         node.NurseId = nurseId;
                         node.ShiftPattern = shiftPattern;
                         node.StaticHeuristicInfo = 0.00;
                         nodesSet.Add(node);
                     }
-                    //Decremento j in quanto lo shiftpattern era già stato generato
+                    //If the last generated pattern is already in the node list "j" must be decreased
                     else j--;
                 }
 
@@ -144,12 +172,36 @@ namespace ACONRP
             return nodesSet;
         }
         /// <summary>
-        /// Procedura per la stampa di un singolo shift pattern generato
+        /// Shift pattern array to shift pattern matrix converter
         /// </summary>
-        /// <param name="shiftPattern">Array di booleani che rappresenta uno shift pattern</param>
-        /// <param name="numShiftTypes">Numero di tipi di shift</param>
-        /// <param name="iterazione">Iterazione in cui è stato generato lo shift pattern</param>
-        private static void PrintSingleShiftPattern(bool[] shiftPattern, int numShiftTypes, int iterazione)
+        /// <param name="shiftPattern">Shift pattern array which contains the generated shift</param>
+        /// <returns>A shift pattern matrix with 'n' rows which are the shift types and 'm' columns which are the day's positions</returns>
+        private static bool[,] ArrayToMatrixConverter(bool[] shiftPattern)
+        {
+            bool[,] shiftPatternMatrix = new bool[numShiftTypes, numOfDays];
+            //Total number of shifts in the array
+            int totalNumOfShifts = numShiftTypes * numOfDays;
+            int rowIndex = 0;
+            int columnIndex = 0;
+            for (int i = 0; i < totalNumOfShifts; i++)
+            {
+                if (rowIndex == numShiftTypes)
+                {
+                    rowIndex = 0;
+                    columnIndex++;
+                }
+                if (shiftPattern[i])
+                    shiftPatternMatrix[rowIndex, columnIndex] = true;
+                rowIndex++;
+            }
+            return shiftPatternMatrix;
+        }
+        /// <summary>
+        /// Shift pattern print procedure
+        /// </summary>
+        /// <param name="shiftPattern">Boolean array which contains the randomly generated shift pattern</param>
+        /// <param name="iterazione">Number of the iteration where the shift pattern has been generated</param>
+        private static void PrintSingleShiftPattern(bool[] shiftPattern, int iterazione)
         {
             int j = 1;
             int count = 0;
@@ -172,9 +224,30 @@ namespace ACONRP
             Console.Write($" {count}\n");
         }
         /// <summary>
-        /// Procedura per la stampa di tutti gli shift pattern contenuti nei nodi
+        /// Shift pattern print override procedure for shift pattern matrix
         /// </summary>
-        /// <param name="nodesPerNurse">Array contenente per ogni infermiere l'insieme di nodi ad esso associato</param>
+        /// <param name="shiftPattern">Boolean matrix which contains the randomly generated shift pattern</param>
+        /// <param name="iterazione">Number of the iteration where the shift pattern has been generated</param>
+        private static void PrintSingleShiftPattern(bool[,] shiftPatternMatrix, int iterazione)
+        {
+            int count = 0;
+            Console.Write($"Iterazione {iterazione}:\n");
+
+            for (int i = 0; i < numShiftTypes; i++)
+            {
+                for (int j = 0; j < numOfDays; j++)
+                {
+                    if (shiftPatternMatrix[i, j]) count++;
+                    Console.Write((shiftPatternMatrix[i, j]) ? " 1" : " 0");
+                }
+                Console.Write("\n");
+            }
+            Console.Write($" {count}\n");
+        }
+        /// <summary>
+        /// Print procedure for whole set of created nodes
+        /// </summary>
+        /// <param name="nodesPerNurse">Array which contains the corresponding set of nodes for each nurse</param>
         public static void PrintAllNodes(List<Node>[] nodesPerNurse)
         {
             for (int i = 0; i < numberOfNurses; i++)
@@ -183,16 +256,16 @@ namespace ACONRP
                 Console.Write($"\nStampa Shift Patterns Infermiere {i}:\n\n");
                 foreach (Node node in nodesPerNurse[i])
                 {
-                    PrintSingleShiftPattern(node.ShiftPattern, numShiftTypes, j);
+                    PrintSingleShiftPattern(node.ShiftPattern, j);
                     j++;
                 }
             }
         }
         /// <summary>
-        /// Procedura per l'aggiunta di un insieme di elementi ad una lista
+        /// Add to a list procedure
         /// </summary>
-        /// <param name="removedElements">Elementi da aggiungere</param>
-        /// <param name="actualRemovedElements">Lista in cui dovranno essere aggiunti</param>
+        /// <param name="removedElements">Elements to add</param>
+        /// <param name="actualRemovedElements">Target list where add the elements</param>
         private static void AddElementsToTotalList(List<int> removedElements, List<int> actualRemovedElements)
         {
             foreach (int element in removedElements)
@@ -201,10 +274,10 @@ namespace ACONRP
             }
         }
         /// <summary>
-        /// Procedura per la rimozione di un insieme di elementi da una lista
+        /// Remove from a list procedure
         /// </summary>
-        /// <param name="removedElements">Elementi da rimuovere</param>
-        /// <param name="actualRemovedElements">Lista da cui dovranno essere rimossi</param>
+        /// <param name="removedElements">Elements to remove</param>
+        /// <param name="actualRemovedElements">Target list where remove the elements</param>
         private static void RemoveElementsToTotalList(List<int> removedElements, List<int> actualRemovedElements)
         {
             foreach (int element in removedElements)
@@ -213,171 +286,161 @@ namespace ACONRP
             }
         }
         /// <summary>
-        /// Procedura di rimozione dalla lista degli indici utilizzati per l'estrazione randomica dei valori che possono determinare una violazione
+        /// Removal procedure of the indexes which can determine a violation from the list used for managing the random generation activity
         /// </summary>
-        /// <param name="comparisonValue">Valore di comparazione di partenza</param>
-        /// <param name="indexesList">Lista di indici utilizzata per la generazione randomica</param>
-        /// <param name="numShiftTypes">Numero di tipi di shift</param>
-        /// <param name="maxConsWorkDays">Numero massimo di giorni consecutivi di lavoro che è possibile assegnare</param>
-        /// <param name="numOfDays">Numero di giorni in cui assegnare i turni</param>
-        /// <param name="removedIndexesList">Lista contenente gli indici rimossi in quanto estratti randomicamente</param>
-        /// <param name="activeIndexesList">Lista contenente gli indici attivi in quanto non estratti randomicamente</param>
-        /// <param name="circularTimePeriod">Determina se l'algoritmo si attiene ai vincoli oppure evita di rimuovere valori che determinano una violazione</param>
-        private static void RemoveConsecutiveDays(ref int comparisonValue, List<int> indexesList, int numShiftTypes, int maxConsWorkDays, int numOfDays, List<int> removedIndexesList, List<int> activeIndexesList, bool circularTimePeriod)
+        /// <param name="comparisonValue">Starting comparison value</param>
+        /// <param name="indexesList">Indexes list used for managing the random generation activity</param>
+        /// <param name="removedIndexesList">List of removed indexes which have been randomly extracted</param>
+        /// <param name="activeIndexesList">List of active indexes which have not been randomly extracted</param>
+        private static void RemoveConsecutiveDays(ref int comparisonValue, List<int> indexesList, List<int> removedIndexesList, List<int> activeIndexesList)
         {
-            //L'analisi viene effettuata solo se la lista degli indici contiene elementi
+            //The analisys take place only if the list of indexes is not empty
             if (!(indexesList.Count == 0))
             {
-                //Valore limite con il quale si anticipa una violazione, pari al numero di tipi di shift per il numero massimo di giorni consecutivi di lavoro
+                //Limit value used to anticipate a possible violation
                 int limitViolation = numShiftTypes * maxConsWorkDays;
-                //Numero di locazioni da controllare, pari al numero di tipi shift per il numero di giorni in cui assegnare i turni
+                //Number of location to check
                 int numLocationsToCheck = numShiftTypes * numOfDays;
-                //Contatore differenze individuate durante controllo
+                //Difference counter
                 int numberOfDifferences = 0;
-                //Contatore per individuare la distanza tra le differenze individuate
+                //Distance counter between identified differences
                 int differencesDistance = 0;
 
-                //Ciclo tutte le locazioni da verificare
+                //For each location to check
                 for (int i = 0; i < numLocationsToCheck; i++)
                 {
-                    //Identifico l'ultima locazione della lista degli indici attivi
+                    //Identification of the last location in the active indexes list
                     int lastLocation = activeIndexesList.Count - 1;
-                    //Finchè sono presenti elementi da confrontare nella lista degli indici attivi
+                    //If there are elements to check and compare in the active indexes list
                     if (lastLocation >= i)
                     {
-                        //Estrapolo elemento da analizzare alla locazione i
+                        //Extract the element at the "i" location for the comparative analisys
                         int analyzedValue = activeIndexesList.ElementAt(i);
                         if (analyzedValue > comparisonValue)
                         {
-                            //*******1. Differenza trovata ********
+                            //*******1. Difference found ********
                             int differenceValue = analyzedValue - comparisonValue;
 
-                            //1.1 La differenza trovata è al limite della violazione, n giorni consecutivi estratti
+                            //1.1 The difference found is equal to the limit violation value, there are "n" consecutive days extracted
                             if (differenceValue == limitViolation)
                             {
-                                //rimuovo successivi
-                                removeNextElements(analyzedValue, indexesList, numShiftTypes);
-                                //rimuovo precedenti
+                                removeNextElements(analyzedValue, indexesList);
                                 if (i != 0)
                                 {
                                     int valueToRemove = activeIndexesList.ElementAt(i - 1);
-                                    removePreviousElements(valueToRemove, indexesList, numShiftTypes);
+                                    removePreviousElements(valueToRemove, indexesList);
                                 }
-                                //Se mi trovo all'inizio della lista rimuovo gli elementi finali
+                                //If the difference found is at the beginning of the list then last elements will be removed
                                 else if (circularTimePeriod)
                                 {
                                     int valueToRemove = numLocationsToCheck - 1;
-                                    removePreviousElements(valueToRemove, indexesList, numShiftTypes);
+                                    removePreviousElements(valueToRemove, indexesList);
                                 }
-                                //Resetto i contatori
+                                //Counters reset
                                 numberOfDifferences = 0;
                                 differencesDistance = 0;
                             }
-                            //1.2 La differenza trovata non è al limite della violazione ma deve essere comunque conteggiata
+                            //1.2 The difference found is not equal to the limit violation value, but it must be considered anyway
                             else
                             {
-                                //Conteggio anche le differenze multiple, se differnceValue/numShiftTypes = 2 allora l'accumulatore va incrementato di 2
+                                //Multiple differences must be count, if differnceValue/numShiftTypes = n then the accumulator needs to be increased by "n"
                                 numberOfDifferences += differenceValue / numShiftTypes;
                                 if (numberOfDifferences == maxConsWorkDays && differencesDistance == numShiftTypes)
                                 {
-                                    //Rimuovo gli elementi che si trovano tra le due serie di valori estratti, saranno quelli che precedono il valore analizzato
+                                    //Removal of the elements located between two series of extracted values, they are the previous elements of the current analyzed value
                                     int valueToRemove = activeIndexesList.ElementAt(i - 1);
-                                    removePreviousElements(valueToRemove, indexesList, numShiftTypes);
-                                    //Decremento il valore del contatore delle differenze di 1 perchè potrei trovarne una successiva da analizzare
+                                    removePreviousElements(valueToRemove, indexesList);
+                                    //The difference counter must be decrease by 1 because another difference can be found later
                                     numberOfDifferences--;
                                     differencesDistance = 0;
                                 }
                                 else if (differencesDistance > numShiftTypes)
                                 {
-                                    //Decremento il valore del contatore delle differenze di 1 perchè potrei trovarne una successiva da analizzare
+                                    //The difference counter must be decrease by 1 because another difference can be found later
                                     numberOfDifferences--;
                                     differencesDistance = 0;
                                 }
                             }
-                            //Aggiorno il valore di confronto al valore differente individuato
+                            //The comparison value is update with the different found value
                             comparisonValue = analyzedValue;
-                            //Riparto a confrontare dalla locazione in cui ho trovato un valore discordante
+                            //The comparative analisys restart from the location where the last different value has been found
                             i = activeIndexesList.IndexOf(analyzedValue);
-                            //Decremento 'i' in quanto successivamente verrà incrementato tramite il for
+                            //The "i" index is decrease because in the for loop there is an increase
                             i--;
                         }
                         else
-                        //*******2. Differenza non trovata ********
+                        //*******2. Difference not found ********
                         {
-                            //Se precedentemente ho individuato una differenza avvio il conteggio della distanza che la separa dalla successiva
+                            //If previously a difference was found the distance counter has to be increase
                             if (numberOfDifferences > 0) differencesDistance++;
-                            //Incremento il valore di confronto
                             comparisonValue++;
                         }
                     }
                     else
                     {
-                        //*******3. Lista indici terminata ********
-                        //Ultimo valore atteso nella lista
-                        int lastValueAttended = numLocationsToCheck - 1;
-                        //Ultimo valore presente effettivamente nella lista
+                        //*******3. Indexes list finished ********
+                        //Last value expected in the list
+                        int lastValueExpected = numLocationsToCheck - 1;
+                        //Last value found in the list
                         int lastValueFound = activeIndexesList.ElementAt(i - 1);
-                        //Eliminazione individuata alla fine della lista
-                        int finalGap = lastValueAttended - lastValueFound;
+                        //Gap found at the end of the list
+                        int finalGap = lastValueExpected - lastValueFound;
 
-                        //3.1 Nessuna eliminazione incontrata nella parte finale della lista
+                        //3.1 No gap found at the end of the list
                         if (finalGap == 0)
                         {
-                            //Se ho individuato in precedenza delle differenze
+                            //If there are previous found differences
                             if (numberOfDifferences > 0 && differencesDistance == numShiftTypes)
                             {
-                                //Individuo il primo turno del primo giorno dell'intervallo temporale
+                                //Identification of the first shift in the first day of the time interval
                                 int firstValueInList = -1;
-                                //Controllo un orizzonte temporale ampio quanto la possibile violazione
+                                //Inspection of a period of time wide enough to contain a violation
                                 int numValuesToCheck = numShiftTypes * (maxConsWorkDays - numberOfDifferences);
-                                //Verifico se vi sono state eliminazioni nell'orizzonte temporale sospetto
+                                //Checks if there are gaps in the analyzed period of time
                                 if (CheckRemovedNextElements(firstValueInList, removedIndexesList, numValuesToCheck) && circularTimePeriod)
                                 {
-                                    //Rimuovo gli ultimi elementi presenti nella lista, in quanto comporterebbero una violazione
-                                    removePreviousElements(lastValueFound, indexesList, numShiftTypes);
+                                    //Removal of the last elements in the list, they can lead to a violation
+                                    removePreviousElements(lastValueFound, indexesList);
                                 }
                             }
                         }
-                        //3.2 L'ultima eliminazione eguaglia il limite della violazione
+                        //3.2 The last gap is equal to the limit violation value
                         else if (finalGap == limitViolation)
                         {
-                            //Rimuovo gli elementi precedenti all'ultimo valore trovato
-                            removePreviousElements(lastValueFound, indexesList, numShiftTypes);
-                            //Individuo il primo turno del primo giorno dell'intervallo temporale
+                            //Removal of the previous elements of the last value found
+                            removePreviousElements(lastValueFound, indexesList);
+                            //Identification of the first shift in the first day of the time interval
                             int firstValueInList = 0;
-                            //Rimuovo gli elementi successivi all'ultimo valore trovato
-                            if (circularTimePeriod) removeNextElements(firstValueInList, indexesList, numShiftTypes);
+                            //Removal of the next elements of the first value in the list
+                            if (circularTimePeriod) removeNextElements(firstValueInList, indexesList);
                         }
-                        //3.3 L'ultima eliminazione non eguaglia il limite della violazione, devo comunque considare le differenze incotrate
+                        //3.3 The last gap is not equal to the limit violation value, but the found differences must be considered anyway
                         else
                         {
                             numberOfDifferences += finalGap / numShiftTypes;
-                            //Rimuovo gli elementi che si trovano tra le due serie di valori estratti, saranno quelli che precedono il valore analizzato
-                            if (numberOfDifferences == maxConsWorkDays && differencesDistance == numShiftTypes) removePreviousElements(lastValueFound, indexesList, numShiftTypes);
+                            //Removal of the elements located between two series of extracted values, they are the previous elements of the current analyzed value
+                            if (numberOfDifferences == maxConsWorkDays && differencesDistance == numShiftTypes) removePreviousElements(lastValueFound, indexesList);
                             if (numberOfDifferences == maxConsWorkDays) numberOfDifferences--;
-                            //Analizzo gli elementi all'inizio dell'intervallo temporale
-                            CheckAndRemoveInitialElements(removedIndexesList, numShiftTypes, maxConsWorkDays, numberOfDifferences, lastValueFound, indexesList, circularTimePeriod);
+                            //Analysis of the elements at the beginning of the time interval
+                            if (circularTimePeriod) CheckAndRemoveInitialElements(removedIndexesList, numberOfDifferences, lastValueFound, indexesList);
                         }
-                        break; //Termino il ciclo
+                        break;
                     }
                 }
                 comparisonValue = 0;
             }
         }
         /// <summary>
-        /// Funzione per l'analisi e la rimozione degli elementi che si trovano all'inizio dell'intervallo temporale, utile nel caso di un periodo temporale inteso in modo circolare
+        /// Analisys and removal of the elements which are located at the start of the time period, it is used if the generation procedure considers a circular period of time
         /// </summary>
-        /// <param name="removedElementsList">Lista contenente gli indici rimossi in quanto estratti randomicamente</param>
-        /// <param name="numShiftTypes">Numero di tipi di shift</param>
-        /// <param name="maxConsWorkDays">Numero massimo di giorni consecutivi di lavoro che è possibile assegnare</param>
-        /// <param name="numberOfDifferences">Numero di differenze trovate, intese come giorni mancanti in quanto estratti</param>
-        /// <param name="lastValueFound">Elemento di partenza da cui iniziare la rimozione</param>
-        /// <param name="indexesList">Lista di indici utilizzata per la generazione randomica</param>
-        /// <param name="circularTimePeriod">Indica se è attiva o meno un periodo temporale circolare</param>
-        /// <returns>Restituisce un valore booleano che denota l'avvenuta rimozione o meno degli elementi</returns>
-        private static bool CheckAndRemoveInitialElements(List<int> removedElementsList, int numShiftTypes, int maxConsWorkDays, int numberOfDifferences, int lastValueFound, List<int> indexesList, bool circularTimePeriod)
+        /// <param name="removedElementsList">List of removed indexes which have been randomly extracted</param>
+        /// <param name="numberOfDifferences">Number of found differences, meant as the missing days which have been extracted</param>
+        /// <param name="lastValueFound">Starting element for the removal</param>
+        /// <param name="indexesList">Indexes list used for managing the random generation activity</param>
+        /// <returns>Boolan value which indicates if the removal has been executed</returns>
+        private static bool CheckAndRemoveInitialElements(List<int> removedElementsList, int numberOfDifferences, int lastValueFound, List<int> indexesList)
         {
-            //Individuo il primo turno del primo giorno dell'intervallo temporale
+            //Identification of the first shift in the first day of the time interval
             int firstValueInList = 0;
             int timeInteval = (numShiftTypes * (maxConsWorkDays - numberOfDifferences)) + numShiftTypes;
             int numToCheck = maxConsWorkDays - numberOfDifferences;
@@ -386,32 +449,28 @@ namespace ACONRP
 
             bool removePrevFromDiff = false;
             bool removePrevFromLast = false;
-            if (CheckRemovedInTimeInteval(firstValueInList, removedElementsList, timeInteval, numShiftTypes, numToCheck, ref diffIndex, ref consecutive))
+            if (CheckRemovedInTimeInteval(firstValueInList, removedElementsList, timeInteval, numToCheck, ref diffIndex, ref consecutive))
             {
-                //Rimuovo gli elementi precedenti all'ultima differenza trovata
-                if (circularTimePeriod) removePrevFromDiff = removePreviousElements(diffIndex, indexesList, numShiftTypes);
+                //Removal of the previous elements of the last difference found
+                removePrevFromDiff = removePreviousElements(diffIndex, indexesList);
 
-                //Se le associzioni trovate sono consecutive rimuovo gli elementi precedenti all'ultimo valore presente nella lista
-                if (consecutive && circularTimePeriod) removePrevFromLast = removePreviousElements(lastValueFound, indexesList, numShiftTypes);
-
+                //If the missing indexes found are consecutive then the previous elements of the last value in the list will be removed
+                if (consecutive) removePrevFromLast = removePreviousElements(lastValueFound, indexesList);
             }
-
             return (removePrevFromDiff || removePrevFromLast);
         }
         /// <summary>
-        /// Funzione di controllo degli elementi rimossi per estrazione randomica all'interno di un intervallo temporale definito - implementazione lista circolare
+        /// Check if there are removed elements in a well-defined time interval, this is necessary for the circular period of time implementation
         /// </summary>
-        /// <param name="startingValue">Valore di partenza da cui effettuare il controllo</param>
-        /// <param name="removedElements">Lista elementi rimossi per estrazione randomica</param>
-        /// <param name="timeInterval">Intervallo temporale in cui applicare il confronto</param>
-        /// <param name="numShiftTypes">Numero di tipi di shift</param>
-        /// <param name="numToSearch">Numero di estarzioni randomiche da individuare</param>
-        /// <param name="diffIndex">Indice dell'ultima differenza riscontrata, necessario per le successive procedure di rimozione</param>
-        /// <param name="consecutive">Denota la tipologia di estrazioni randomiche individuate, consecutive o non consecutive, necessario per le successive procedure di rimozione</param>
-        /// <returns>Restituisce un valore booleano che identifica se le estrazioni randomica sono state individuate</returns>
-        private static bool CheckRemovedInTimeInteval(int startingValue, List<int> removedElements, int timeInterval, int numShiftTypes, int numToSearch, ref int diffIndex, ref bool consecutive)
+        /// <param name="startingValue">Starting element for the check activity<</param>
+        /// <param name="removedElements">List of removed indexes which have been randomly extracted</param>
+        /// <param name="timeInterval">Time interval chosen for the check activity</param>
+        /// <param name="numToSearch">Needed number of random extraction to identify</param>
+        /// <param name="diffIndex">Index of the last identified difference, this is necessary for the successive removal procedure</param>
+        /// <param name="consecutive">Denotes the identified random extraction typology which can be consecutive or nonconsecutive, this is necessary for the successive removal procedure</param>
+        /// <returns>Boolean value which indicates the check result</returns>
+        private static bool CheckRemovedInTimeInteval(int startingValue, List<int> removedElements, int timeInterval, int numToSearch, ref int diffIndex, ref bool consecutive)
         {
-
             int equalsCounter = 0;
             int diffCounter = 0;
 
@@ -434,15 +493,14 @@ namespace ACONRP
 
             if (numOfEquals == numToSearch && numOfDiffers == 1) return true;
             else return false;
-
         }
         /// <summary>
-        /// Verifica che tutti gli elementi che precedono il valore da controllare siano presenti nella lista degli elementi rimossi
+        /// Check if the removed elements list contains all the previous elements of an input value
         /// </summary>
-        /// <param name="startingValue">Valore di partenza da cui avviare il controllo</param>
-        /// <param name="removedElements">Lista degli elementi rimossi in quanto estratti randomicamente</param>
-        /// <param name="numValuesToCheck">Numero di valori da controllare</param>
-        /// <returns>Restiutisce l'esito del controllo tramite booleano</returns>
+        /// <param name="startingValue">Starting element for the check activity</param>
+        /// <param name="removedElements">List of removed indexes which have been randomly extracted</param>
+        /// <param name="numValuesToCheck">Number of values to check</param>
+        /// <returns>Boolean value which indicates the check result</returns>
         private static bool CheckRemovedPreviousElements(int startingValue, List<int> removedElements, int numValuesToCheck)
         {
             for (int j = 1; j <= numValuesToCheck; j++)
@@ -452,12 +510,12 @@ namespace ACONRP
             return true;
         }
         /// <summary>
-        /// Verifica che tutti gli elementi che susseguono il valore da controllare siano presenti nella lista degli elementi rimossi
+        /// Check if the removed elements list contains all the next elements of an input value
         /// </summary>
-        /// <param name="startingValue">Valore di partenza da cui avviare il controllo</param>
-        /// <param name="removedElements">Lista degli elementi rimossi in quanto estratti randomicamente</param>
-        /// <param name="numValuesToCheck">Numero di valori da controllare</param>
-        /// <returns>Restiutisce l'esito del controllo tramite booleano</returns>
+        /// <param name="startingValue">Starting element for the check activity</param>
+        /// <param name="removedElements">List of removed indexes which have been randomly extracted</param>
+        /// <param name="numValuesToCheck">Number of values to check</param>
+        /// <returns>Boolean value which indicates the check result</returns>
         private static bool CheckRemovedNextElements(int startingValue, List<int> removedElements, int numValuesToCheck)
         {
             for (int j = 1; j <= numValuesToCheck; j++)
@@ -467,13 +525,12 @@ namespace ACONRP
             return true;
         }
         /// <summary>
-        /// Rimuove gli elementi precedenti ad un valore di input
+        /// Removal of the previous elements of an input value
         /// </summary>
-        /// <param name="valueToRemove">Elemento di partenza da cui iniziare la rimozione</param>
-        /// <param name="indexesList">Lista di indici utilizzata per la generazione randomica</param>
-        /// <param name="numShiftTypes">Numero di tipi di shift</param>
-        /// <returns>Valore booleano che denota l'esecuzione o meno della rimozione</returns>
-        private static bool removePreviousElements(int valueToRemove, List<int> indexesList, int numShiftTypes)
+        /// <param name="valueToRemove">Starting element for the removal</param>
+        /// <param name="indexesList">Indexes list used for managing the random generation activity</param>
+        /// <returns>Boolean value which indicates the execution of the removal</returns>
+        private static bool removePreviousElements(int valueToRemove, List<int> indexesList)
         {
             for (int j = 0; j < numShiftTypes; j++)
             {
@@ -483,13 +540,12 @@ namespace ACONRP
             return true;
         }
         /// <summary>
-        /// Rimuove gli elementi successivi ad un valore di input
+        /// Removal of the next elements of an input value
         /// </summary>
-        /// <param name="valueToRemove">Elemento di partenza da cui iniziare la rimozione</param>
-        /// <param name="indexesList">Lista di indici utilizzata per la generazione randomica</param>
-        /// <param name="numShiftTypes">Numero di tipi di shift</param>
-        /// <returns>Valore booleano che denota l'esecuzione o meno della rimozione</returns>
-        private static bool removeNextElements(int valueToRemove, List<int> indexesList, int numShiftTypes)
+        /// <param name="valueToRemove">Starting element for the removal</param>
+        /// <param name="indexesList">Indexes list used for managing the random generation activity</param>
+        /// <returns>Boolean value which indicates the execution of the removal</returns>
+        private static bool removeNextElements(int valueToRemove, List<int> indexesList)
         {
             for (int j = 0; j < numShiftTypes; j++)
             {
@@ -500,14 +556,13 @@ namespace ACONRP
             return true;
         }
         /// <summary>
-        /// Funzione che verifica se l'insieme dei nodi contiene già il nuovo pattern generato
+        /// Check if a new shift pattern is already in the set of nodes generated so far
         /// </summary>
-        /// <param name="nodesSet">Insieme dei nodi attuale</param>
-        /// <param name="pattern">Nuovo pattern generato</param>
-        /// <returns>Restituisce un valore booleano che indica se il pattern è già contenuto o meno nell'insieme</returns>
+        /// <param name="nodesSet">Current set of nodes</param>
+        /// <param name="pattern">New generated pattern</param>
+        /// <returns>Boolean value which indicates if the new shift pattern is already in the set of nodes</returns>
         private static bool listContainsPattern(List<Node> nodesSet, bool[] pattern)
         {
-
             foreach (Node node in nodesSet)
             {
                 if (patternsAreEqual(node.ShiftPattern, pattern))
@@ -515,21 +570,20 @@ namespace ACONRP
                     return true;
                 }
             }
-
             return false;
         }
         /// <summary>
-        /// Funzione di confronto tra pattern
+        /// Shift pattern comparison function
         /// </summary>
-        /// <param name="pattern1">Array di booleani da confrontare</param>
-        /// <param name="pattern2">Array di booleani da confrontare</param>
-        /// <returns>Restituisce un valore booleano che denota l'esito del confronto</returns>
+        /// <param name="pattern1">Boolean array to make the comparison</param>
+        /// <param name="pattern2">Boolean array to make the comparison</param>
+        /// <returns>Boolean value which indicates the comparison result</returns>
         private static bool patternsAreEqual(bool[] pattern1, bool[] pattern2)
         {
             return pattern1.SequenceEqual(pattern2);
         }
         /// <summary>
-        /// Funzione per il calcolo del coefficente binomiale
+        /// Binomila coefficent function
         /// </summary>
         /// <param name="N"></param>
         /// <param name="K"></param>
@@ -545,11 +599,11 @@ namespace ACONRP
             return result;
         }
         /// <summary>
-        /// Procedura di inizializzazione di una lista di indici
+        /// List of indexes initialization procedure
         /// </summary>
-        /// <param name="arrayListIndexes">Lista di indici da inizializzare</param>
-        /// <param name="numberPositions">Numero di posizioni da indicizzare</param>
-        /// <param name="offset">Offset per traslazione indici</param>
+        /// <param name="arrayListIndexes">List of indexes that needs to be initialized</param>
+        /// <param name="numberPositions">Number of positions to index</param>
+        /// <param name="offset">Index offset for translation operation</param>
         private static void IndexesListInitializer(List<int> arrayListIndexes, int numberPositions, int offset)
         {
             for (int i = 0; i < numberPositions; i++)
@@ -559,15 +613,13 @@ namespace ACONRP
 
         }
         /// <summary>
-        /// Funzione per l'assegnamento randomico di un turno
+        /// Random shift assignment function
         /// </summary>
-        /// <param name="rnd">Generatore randomico</param>
-        /// <param name="indexesList">Lista di indici utilizzata per la generazione randomica</param>
-        /// <param name="baseShiftPattern">Shift pattern in cui viene memorizzato il turno generato</param>
-        /// <param name="numShiftTypes">Numero di tipi di shift</param>
-        /// <param name="singleAssntPerDay">Opzione che regola se in un giorno può essere assegnato un solo turno</param>
-        /// <returns>Restituisce una lista con gli indici rimossi in quanto estratti randomicamente</returns>
-        private static List<int> RandomShiftAssigner(Random rnd, List<int> indexesList, bool[] baseShiftPattern, int numShiftTypes, bool singleAssntPerDay)
+        /// <param name="rnd">Random generator</param>
+        /// <param name="indexesList">Indexes list used for managing the random generation activity</param>
+        /// <param name="baseShiftPattern">Boolean array which contains the randomly generated shift pattern</param>       
+        /// <returns>List of removed indexes which have been randomly generated</returns>
+        private static List<int> RandomShiftAssigner(Random rnd, List<int> indexesList, bool[] baseShiftPattern)
         {
             List<int> removedIndexes = new List<int>();
             if (indexesList.Count > 0)
@@ -576,7 +628,7 @@ namespace ACONRP
                 int shiftPatterIndex = Convert.ToInt16(indexesList[randomValue]);
                 if (singleAssntPerDay)
                 {
-                    removedIndexes = GetIndexesToRemove(shiftPatterIndex, numShiftTypes);
+                    removedIndexes = GetIndexesToRemove(shiftPatterIndex);
                     foreach (int element in removedIndexes) indexesList.Remove(element);
                 }
                 else
@@ -589,28 +641,28 @@ namespace ACONRP
             return removedIndexes;
         }
         /// <summary>
-        /// Funzione per indentificare i turni da rimuovere in quanto appartenenti allo stesso giorno in cui è avvenuta l'estrazione randomica
+        /// Identification of the shifts which belong to the same day of a randomly extracted shift and need to be removed
         /// </summary>
-        /// <param name="shiftPatternIndex">Indice estratto randomicamente</param>
-        /// <param name="numShiftTypes">Numero di tipi di shift</param>
-        /// <returns></returns>
-        private static List<int> GetIndexesToRemove(int shiftPatternIndex, int numShiftTypes)
+        /// <param name="shiftPatternIndex">Randomly extracted index</param>
+        /// <param name="numShiftTypes">Number of shift types</param>
+        /// <returns>List of the identified indexes</returns>
+        private static List<int> GetIndexesToRemove(int shiftPatternIndex)
         {
             List<int> indexesToRemove = new List<int>();
-            //Calcolo il modulo tra il valore dell'indice estratto e il numero di tipi di shift
+            //Modulus between the extracted index value and the number of shift types
             int modResult = shiftPatternIndex % numShiftTypes;
 
             if (!(modResult > numShiftTypes))
             {
                 for (int i = 0; i < numShiftTypes; i++)
                 {
-                    //Aggiungo alla lista gli indici adiacenti all'indice estratto randomicamente
+                    //Add to the list the adjacent indexes of the randomly extracted index
                     indexesToRemove.Add((i - modResult) + shiftPatternIndex);
                 }
             }
             else
             {
-                Console.WriteLine($"Attenzione il risultato dell'operazione modulo è maggiore del numero dei tipi di turni inserito. Effettuare una verifica.");
+                Console.WriteLine($"Attention please! The modulus result is greater then the specified number of shift types. Review your input data.");
             }
             return indexesToRemove;
         }
