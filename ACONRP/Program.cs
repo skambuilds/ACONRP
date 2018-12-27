@@ -13,14 +13,17 @@ namespace ACONRP
     {
         static void Main(string[] args)
         {
-
+            var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
+            ACOHandler handler = new ACOHandler(inputData);
             //Chiamata procedura di generazione dell'insieme di nodi che rappresentano gli shift pattern validi
-            List<Node>[] nodes = GenerationManager.PatternGenerationMethod();
+            List<Node>[] nodes = handler.GenerationManager.PatternGenerationMethod();
             //Stampa dei nodi generati
-            GenerationManager.PrintAllNodes(nodes);
+            handler.GenerationManager.PrintAllNodes(nodes);
+            
+            handler.ComputeStaticHeuristic(nodes);
 
             Console.ReadKey();
-                      
+
         }
 
         private static List<Node> ACOAlgorithm()
@@ -32,13 +35,13 @@ namespace ACONRP
 
             //***2.
             //Chiamata procedura di generazione dell'insieme di nodi che rappresentano gli shift pattern validi
-            List<Node>[] nodesA = GenerationManager.PatternGenerationMethod();
+            //List<Node>[] nodesA = GenerationManager.PatternGenerationMethod();
 
             //***3 - Fabrizio B.
-            ComputeStaticHeuristic(nodesA);
+           // ComputeStaticHeuristic(nodesA);
 
             //***4
-            mainSolution = GetSolution(nodesA);
+         //  mainSolution = GetSolution(nodesA);
 
             //***5 - da agganciare Alessandro,  inserire metodo apposito per il calcolo della staticSolutionFitness
             //InitLocalPheromone(double staticSolutionFitness);
@@ -48,11 +51,11 @@ namespace ACONRP
                 List<Ant> ants = new List<Ant>(1000);
                 foreach (Ant ant in ants)
                 {
-                    for (int i = 0; i < GenerationManager.numberOfNurses; i++)
+                   // for (int i = 0; i < GenerationManager.numberOfNurses; i++)
                     {
-                        double[] nurseHeuristic = MetodoCalcoloEuristica(nodesA[i]);
-                        Node tempNode = MetodoSceltaDelNodo(nurseHeuristic, edgeList);
-                        ant.Solution.Add(tempNode);
+                       // double[] nurseHeuristic = MetodoCalcoloEuristica(nodesA[i]);
+                       // Node tempNode = MetodoSceltaDelNodo(nurseHeuristic, edgeList);
+                       // ant.Solution.Add(tempNode);
                     }
                     if (MetodoComparazioneSoluzioneMigliore(mainSolution, ant.Solution))
                     {

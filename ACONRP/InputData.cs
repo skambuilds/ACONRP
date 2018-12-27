@@ -358,10 +358,10 @@ namespace ACONRP
         public Employees Employees { get; set; }
         [XmlElement(ElementName = "CoverRequirements")]
         public CoverRequirements CoverRequirements { get; set; }
-        [XmlElement(ElementName = "DayOffRequests")]
-        public string DayOffRequests { get; set; }
-        [XmlElement(ElementName = "ShiftOffRequests")]
-        public string ShiftOffRequests { get; set; }
+        //[XmlElement(ElementName = "DayOffRequests")]
+        //public string DayOffRequests { get; set; }
+        //[XmlElement(ElementName = "ShiftOffRequests")]
+        //public string ShiftOffRequests { get; set; }
         [XmlAttribute(AttributeName = "ID")]
         public string ID { get; set; }
         [XmlAttribute(AttributeName = "xsi", Namespace = "http://www.w3.org/2000/xmlns/")]
