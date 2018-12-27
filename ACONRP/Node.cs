@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace ACONRP
 {
-    class Node
+    public class Node
     {
         private int nurseId;
         private int index;
-        private bool[] shiftPattern;
+        private bool[,] shiftPattern;
         private double staticHeuristicInfo;
 
         public int NurseId
@@ -35,7 +35,7 @@ namespace ACONRP
                 index = value;
             }
         }
-        public bool[] ShiftPattern
+        public bool[,] ShiftPattern
         {
             get
             {

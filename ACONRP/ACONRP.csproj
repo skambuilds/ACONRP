@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ACOHandler.cs" />
     <Compile Include="Ant.cs" />
     <Compile Include="Edge.cs" />
     <Compile Include="GenerationManager.cs" />
@@ -52,6 +53,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Side.cs" />
+    <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Instances\Sprint\sprint01.xml" />
