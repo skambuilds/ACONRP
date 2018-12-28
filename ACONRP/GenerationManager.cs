@@ -121,6 +121,8 @@ namespace ACONRP
             List<int> activeIndexes = new List<int>();
             //List of removed indexes which have been randomly extracted
             List<int> actualRemovedElements = new List<int>();
+            //Counter of created nodes used as node index
+            int nodeIndex = 0;
 
             //Loop for each desired assignment value
             for (int i = minNumAssnt; i <= maxNumAssnt; i++)
@@ -164,11 +166,12 @@ namespace ACONRP
                     {
                         //PrintSingleShiftPattern(shiftPattern, j);
                         //PrintSingleShiftPattern(shiftPatternMatrix, j);
-                        node.Index = j;
+                        node.Index = nodeIndex;
                         node.NurseId = nurseId;
                         node.ShiftPattern = shiftPatternMatrix;
                         node.StaticHeuristicInfo = 0.00;
                         nodesSet.Add(node);
+                        nodeIndex++;
                     }
                     //If the last generated pattern is already in the node list "j" must be decreased
                     else j--;
@@ -262,6 +265,7 @@ namespace ACONRP
                 Console.Write($"\nStampa Shift Patterns Infermiere {i}:\n\n");
                 foreach (Node node in nodesPerNurse[i])
                 {
+                    Console.Write($"Id nodo: {node.Index}\n");
                     PrintSingleShiftPattern(node.ShiftPattern, j);
                     j++;
                 }
