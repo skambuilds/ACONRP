@@ -12,7 +12,7 @@ namespace ACONRP
         public SchedulingPeriod InputData { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public List<int[,]> CoverRequirements { get; set; }
+        public int[,] CoverRequirements { get; set; }
         public Dictionary<string, int> GradeIndex = new Dictionary<string, int>();
         public Dictionary<string, int> ShiftPatternIndex = new Dictionary<string, int>();
         public Dictionary<string, List<int>> DayIndex = new Dictionary<string, List<int>>
@@ -25,6 +25,110 @@ namespace ACONRP
            {"Saturday", new List<int>() },
            {"Sunday", new List<int>() }
         };
+
+        /// <summary>
+        /// Initializes the edges structure following the provided solution.
+        /// In this phase the edge pheromone is set to the fitness value of the objective function using the provided solution
+        /// </summary>
+        /// <param name="mainSolution">Solution derived from the static heuristic info</param>
+        /// <param name="edges">Empty list of edges</param>
+        public void InitializeLocalPheromone(List<Node> mainSolution, List<Edge> edges)
+        {
+            var fitnessValue = ApplySolution(mainSolution).Item1;
+            for (int i = 0; i < mainSolution.Count; i++)
+            {
+                if (mainSolution.Last() == mainSolution[i])
+                    break;
+
+                edges.Add(new Edge
+                {
+                    IndexNurseA = i,
+                    IndexNodeA = mainSolution[i].Index,
+                    IndexNurseB = i + 1,
+                    IndexNodeB = mainSolution[i + 1].Index,
+                    Pheromone = 1.0 / (fitnessValue + 1)
+                });
+            }
+        }
+
+
+        /// <summary>
+        /// Returns a tuple where:
+        ///     the first element is the sum of the uncovered requirement shifts
+        ///     the second element is a matrix computed by the difference between the original
+        ///     cover requirements and the provided solution
+        /// </summary>
+        /// <param name="mainSolution">A list of nodes that rappresents a complete solution</param>
+        /// <returns></returns>
+        public Tuple<int, int[,]> ApplySolution(List<Node> mainSolution)
+        {
+            int objectiveFunctionValue = 0;
+            int[,] coverRequirements = (int[,])CoverRequirements.Clone(); ;
+
+            //#if DEBUG
+            //            Console.WriteLine("Cover requirements before applying the solution");
+            //            for (int i = 0; i < coverRequirements.GetLength(0); i++)
+            //            {
+            //                for (int j = 0; j < coverRequirements.GetLength(1); j++)
+            //                {
+            //                    Console.Write($" {(coverRequirements[i, j])} ");
+            //                }
+            //                Console.Write("\n");
+            //            }
+            //            Console.Write("\n");
+            //#endif
+
+            foreach (Node node in mainSolution)
+            {
+                for (int i = 0; i < node.ShiftPattern.GetLength(0); i++)
+                {
+                    for (int j = 0; j < node.ShiftPattern.GetLength(1); j++)
+                    {
+                        int uncoveredShifts = coverRequirements[i, j] - ((node.ShiftPattern[i, j]) ? 1 : 0);
+                        coverRequirements[i, j] = (uncoveredShifts < 0) ? 0 : uncoveredShifts;
+                    }
+                }
+            }
+
+            for (int i = 0; i < coverRequirements.GetLength(0); i++)
+            {
+                for (int j = 0; j < coverRequirements.GetLength(1); j++)
+                {
+                    objectiveFunctionValue += coverRequirements[i, j];
+                }
+            }
+
+            //#if DEBUG
+            //            Console.WriteLine("Cover requirements after applying the solution");
+            //            for (int i = 0; i < coverRequirements.GetLength(0); i++)
+            //            {
+            //                for (int j = 0; j < coverRequirements.GetLength(1); j++)
+            //                {
+            //                    Console.Write($" {(coverRequirements[i, j])} ");
+            //                }
+            //                Console.Write("\n");
+            //            }
+            //#endif
+            return new Tuple<int, int[,]>(objectiveFunctionValue, coverRequirements);
+        }
+
+        /// <summary>
+        /// Returns a solution as a list that is made of the best nodes per single employee.
+        /// e.i. the best node of a list of nodes is the one with the maximum static heuristic info
+        /// </summary>
+        /// <param name="nodes">Array of list of nodes where StaticHeuristicInfo has been initialized</param>
+        /// <returns></returns>
+        public List<Node> ExtractSolution(List<Node>[] nodes)
+        {
+            List<Node> solution = new List<Node>();
+
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                solution.Add(nodes[i].Aggregate((agg, next) => next.StaticHeuristicInfo > agg.StaticHeuristicInfo ? next : agg));
+            }
+
+            return solution;
+        }
 
         public Dictionary<string, int> SordedDays = new Dictionary<string, int>() {
             { "Monday", 0 }, {"Tuesday", 1 }, {"Wednesday", 2 }, {"Thursday", 3 }, {"Friday", 4 }, {"Saturday", 5 }, {"Sunday", 6 }
@@ -53,9 +157,29 @@ namespace ACONRP
             var orderedShifts = inputData.ShiftTypes.Shift.OrderBy(x => DateTime.Parse(x.StartTime)).ThenBy(x => DateTime.Parse(x.EndTime)).ToList();
             orderedShifts.ForEach(x => ShiftPatternIndex.Add(x.ID, orderedShifts.IndexOf(x)));
 
-            for (int i = 0; i < EndDate.Subtract(StartDate).Days; i++)
+            for (int i = 0; i < EndDate.Subtract(StartDate).Days + 1; i++)
             {
                 DayIndex[StartDate.AddDays(i).DayOfWeek.ToString()].Add(i);
+            }
+
+            InitiazeCoverRequirements();
+        }
+
+        /// <summary>
+        /// Initializes the matrix of cover requirements using InputData
+        /// </summary>
+        private void InitiazeCoverRequirements()
+        {
+            int periodInDays = EndDate.Subtract(StartDate).Days + 1;
+            CoverRequirements = new int[InputData.ShiftTypes.Shift.Count, periodInDays];
+            foreach (var coverDay in InputData.CoverRequirements.DayOfWeekCover)
+            {
+                foreach (var coverShift in coverDay.Cover)
+                {
+                    var shiftIndex = ShiftPatternIndex[coverShift.Shift];
+                    var coverReqValue = int.Parse(coverShift.Preferred);
+                    DayIndex[coverDay.Day].ForEach(index => CoverRequirements[shiftIndex, index] = coverReqValue);
+                }
             }
         }
 
@@ -78,16 +202,11 @@ namespace ACONRP
                 var costsUnwantedShift = HandleUnwantedShift(unwantedShift, nodes[nurseIndex]);
                 var costsUnwantedDay = HandleUnwantedDays(unwantedDays, nodes[nurseIndex]);
 
-                var costs = new List<double>();
+
                 for (int i = 0; i < costsUnwantedDay.Count; i++)
                 {
-                    costs.Add(costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i));
-                }
-
-                for (int i = 0; i < nodes[nurseIndex].Count; i++)
-                {
-                    //assegnazione sul nodo del valore euristico calcolato
-                    //nursesPatterns[index].ElementAt(i) = costs.ElementAt(i);
+                    double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i);
+                    nodes[nurseIndex].ElementAt(i).StaticHeuristicInfo = 1.0 / (1.0 + cost);
                 }
             }
 
@@ -138,6 +257,7 @@ namespace ACONRP
             var patternOccurences = 0;
             do
             {
+                var confirmedPattern = 0;
                 foreach (var patternEntry in patternEntries)
                 {
                     int? indexDay = DayIndex[patternEntry.Day].Where(x => x >= startWeekIndex && x <= endWeekIndex).FirstOrDefault();
@@ -150,8 +270,10 @@ namespace ACONRP
                     if (patternEntry.ShiftType == "None" && Utils.GetColumn<bool>(nursePattern, indexDay.Value).Contains(true))
                         break;
 
-                    patternOccurences++;
+                    confirmedPattern++;
                 }
+                if (confirmedPattern == patternEntries.Count)
+                    patternOccurences++;
 
                 startWeekDate = endWeekDate.AddDays(1);
                 startWeekIndex = endWeekIndex + 1;
@@ -239,7 +361,7 @@ namespace ACONRP
                     }
                     else
                     {
-                        IsCheked = j < AssignmentPosition.Count-1;
+                        IsCheked = j < AssignmentPosition.Count - 1;
                         continue;
                     }
 

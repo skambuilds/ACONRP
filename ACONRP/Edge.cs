@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 
 namespace ACONRP
 {
-    class Edge
+    public class Edge
     {
-        private int indexNurseA;
-        private int indexNurseB;
-        private int indexNodeA;
-        private int indexNodeB;
-        private double pheromone;
+        public int IndexNurseA { get; set; }
+        public int IndexNurseB { get; set; }
+        public int IndexNodeA { get; set; }
+        public int IndexNodeB { get; set; }
+        public double Pheromone { get; set; }
+
     }
 }
