@@ -339,6 +339,44 @@ namespace ACONRP
         public List<DayOfWeekCover> DayOfWeekCover { get; set; }
     }
 
+    [XmlRoot(ElementName = "DayOff")]
+    public class DayOff
+    {
+        [XmlElement(ElementName = "EmployeeID")]
+        public string EmployeeID { get; set; }
+        [XmlElement(ElementName = "Date")]
+        public string Date { get; set; }
+        [XmlAttribute(AttributeName = "weight")]
+        public string Weight { get; set; }
+    }
+
+    [XmlRoot(ElementName = "DayOffRequests")]
+    public class DayOffRequests
+    {
+        [XmlElement(ElementName = "DayOff")]
+        public List<DayOff> DayOff { get; set; }
+    }
+
+    [XmlRoot(ElementName = "ShiftOff")]
+    public class ShiftOff
+    {
+        [XmlElement(ElementName = "ShiftTypeID")]
+        public string ShiftTypeID { get; set; }
+        [XmlElement(ElementName = "EmployeeID")]
+        public string EmployeeID { get; set; }
+        [XmlElement(ElementName = "Date")]
+        public string Date { get; set; }
+        [XmlAttribute(AttributeName = "weight")]
+        public string Weight { get; set; }
+    }
+
+    [XmlRoot(ElementName = "ShiftOffRequests")]
+    public class ShiftOffRequests
+    {
+        [XmlElement(ElementName = "ShiftOff")]
+        public List<ShiftOff> ShiftOff { get; set; }
+    }
+
     [XmlRoot(ElementName = "SchedulingPeriod")]
     public class SchedulingPeriod
     {
@@ -358,10 +396,10 @@ namespace ACONRP
         public Employees Employees { get; set; }
         [XmlElement(ElementName = "CoverRequirements")]
         public CoverRequirements CoverRequirements { get; set; }
-        //[XmlElement(ElementName = "DayOffRequests")]
-        //public string DayOffRequests { get; set; }
-        //[XmlElement(ElementName = "ShiftOffRequests")]
-        //public string ShiftOffRequests { get; set; }
+        [XmlElement(ElementName = "DayOffRequests")]
+        public DayOffRequests DayOffRequests { get; set; }
+        [XmlElement(ElementName = "ShiftOffRequests")]
+        public ShiftOffRequests ShiftOffRequests { get; set; }
         [XmlAttribute(AttributeName = "ID")]
         public string ID { get; set; }
         [XmlAttribute(AttributeName = "xsi", Namespace = "http://www.w3.org/2000/xmlns/")]

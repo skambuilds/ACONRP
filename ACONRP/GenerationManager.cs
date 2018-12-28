@@ -80,8 +80,7 @@ namespace ACONRP
         /// </summary>
         private void GenericInputDataInitializer(SchedulingPeriod inputData)
         {
-            //numberOfNurses = inputData.Employees.Employee.Count;
-            numberOfNurses = 1;
+            numberOfNurses = inputData.Employees.Employee.Count;
             numShiftTypes = inputData.ShiftTypes.Shift.Count;
             DateTime startDate = Convert.ToDateTime(inputData.StartDate);
             DateTime endDate = Convert.ToDateTime(inputData.EndDate);

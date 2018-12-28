@@ -8,55 +8,9 @@ namespace ACONRP
 {
     public class Node
     {
-        private int nurseId;
-        private int index;
-        private bool[,] shiftPattern;
-        private double staticHeuristicInfo;
-
-        public int NurseId
-        {
-            get
-            {
-                return nurseId;
-            }
-            set
-            {
-                nurseId = value;
-            }
-        }
-        public int Index
-        {
-            get
-            {
-                return index;
-            }
-            set
-            {
-                index = value;
-            }
-        }
-        public bool[,] ShiftPattern
-        {
-            get
-            {
-                return shiftPattern;
-            }
-            set
-            {
-                shiftPattern = value;
-            }
-        }
-        public double StaticHeuristicInfo
-        {
-            get
-            {
-                return staticHeuristicInfo;
-            }
-            set
-            {
-                staticHeuristicInfo = value;
-            }
-
-        }
+        public int NurseId { get; set; }
+        public int Index { get; set; }
+        public bool[,] ShiftPattern { get; set; }
+        public double StaticHeuristicInfo { get; set; }
     }
 }
