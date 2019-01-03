@@ -8,6 +8,13 @@ namespace ACONRP
 {
     public class ACOHandler
     {
+        public const double PARAM_ALPHA = 1.0;
+        public const double PARAM_BETA = 2.0;
+        public const double PARAM_Q0 = 0.5;
+        public const double PARAM_EPSILON = 0.1;
+        public const double PARAM_RHO = 0.1;
+        public const double PARAM_LAMBDA = 200.0;
+
         public GenerationManager GenerationManager { get; set; }
         public SchedulingPeriod InputData { get; set; }
         public DateTime StartDate { get; set; }
@@ -25,30 +32,188 @@ namespace ACONRP
            {"Saturday", new List<int>() },
            {"Sunday", new List<int>() }
         };
+        private double Pheromone_0 { get; set; }
 
-        /// <summary>
-        /// Initializes the edges structure following the provided solution.
-        /// In this phase the edge pheromone is set to the fitness value of the objective function using the provided solution
-        /// </summary>
-        /// <param name="mainSolution">Solution derived from the static heuristic info</param>
-        /// <param name="edges">Empty list of edges</param>
-        public void InitializeLocalPheromone(List<Node> mainSolution, List<Edge> edges)
+
+        public int NodeSelection(Tuple<double, int[,]>[] heuristicInformation, List<Node>[] nodes, List<Edge> edges, int nurseDestinationIdex)
         {
-            var fitnessValue = ApplySolution(mainSolution).Item1;
-            for (int i = 0; i < mainSolution.Count; i++)
+            int nurseSourceIndex = nurseDestinationIdex - 1;
+            int nodeOnDestination = nodes[nurseDestinationIdex].Count;
+
+            //proability p(i,j)
+
+            var probability = new double[nodeOnDestination];
+            var overallProbability = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex)
+                                            .Sum(x => Math.Pow(x.Pheromone, PARAM_ALPHA) * Math.Pow(heuristicInformation[x.IndexNodeB].Item1, PARAM_BETA));
+
+            foreach (var edge in edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex))
             {
-                if (mainSolution.Last() == mainSolution[i])
+                probability[edge.IndexNodeB] = (Math.Pow(edge.Pheromone, PARAM_ALPHA) * Math.Pow(heuristicInformation[edge.IndexNodeB].Item1, PARAM_BETA)) / overallProbability;
+            }
+
+            Random rnd = new Random();
+            //pseudorandom proportional rule
+            if (rnd.NextDouble() < PARAM_Q0)
+            {
+                double max = probability.Cast<double>().Max();
+                return Array.IndexOf(probability, max);
+            }
+            else
+            {
+                return rnd.Next(0, probability.Count());
+            }
+        }
+
+        internal void GlobalPheromoneUpdate(List<Node> mainSolution, int mainSolutionFitnessValue, List<Edge> edges)
+        {
+            foreach (var node in mainSolution)
+            {
+                if (mainSolution.Last() == node)
                     break;
 
-                edges.Add(new Edge
+                var nextNode = mainSolution.First(n => n.NurseId == node.NurseId + 1);
+
+                var solutionEdge = edges.First(ed => ed.IndexNurseA == node.NurseId && ed.IndexNurseB == nextNode.NurseId && ed.IndexNodeA == node.Index && ed.IndexNodeB == nextNode.Index);
+                solutionEdge.Pheromone = (1.0 - PARAM_RHO) * solutionEdge.Pheromone + PARAM_RHO * (1 / (1 + mainSolutionFitnessValue * PARAM_LAMBDA));
+
+            }
+        }
+
+        /// <summary>
+        /// Local pheromone update is apllied on the edges that belongs to the mainSolution
+        /// </summary>
+        /// <param name="mainSolution"></param>
+        /// <param name="edges"></param>
+        internal void LocalPheromoneUpdate(List<Node> mainSolution, List<Edge> edges)
+        {
+            var solutionEdgeList = new List<Edge>();
+            foreach (var node in mainSolution)
+            {
+                if (mainSolution.Last() == node)
+                    break;
+
+                var nextNode = mainSolution.First(n => n.NurseId == node.NurseId + 1);
+
+                var solutionEdge = edges.First(ed => ed.IndexNurseA == node.NurseId && ed.IndexNurseB == nextNode.NurseId && ed.IndexNodeA == node.Index && ed.IndexNodeB == nextNode.Index);
+                solutionEdge.Pheromone = (1.0 - PARAM_EPSILON) * solutionEdge.Pheromone + PARAM_EPSILON * Pheromone_0;
+                solutionEdgeList.Add(solutionEdge);
+            }
+
+            //simple pheromone evaporation update
+            edges.Except(solutionEdgeList).ToList().ForEach(x => x.Pheromone = (1.0 - PARAM_EPSILON) * x.Pheromone);
+        }
+
+        /// <summary>
+        /// Returns an arrray of couples where:
+        ///     The first element denotes the value of the heuristic information of the node (static*dynamic)
+        ///     The second element is the resulting cover requirements matrix after the application of the node ShiftPattern
+        /// </summary>
+        /// <param name="nodes"></param>
+        /// <param name="coverRequirements"></param>
+        /// <returns></returns>
+        public Tuple<double, int[,]>[] ComputeHeuristicInfo(List<Node> nodes, int[,] coverRequirements)
+        {
+            var heuristicInfo = new Tuple<double, int[,]>[nodes.Count];
+            foreach (var node in nodes)
+            {
+                heuristicInfo[node.Index] = ApplySingleSolution(node, (int[,])coverRequirements.Clone());
+            }
+
+            return heuristicInfo;
+        }
+
+        internal void InitializeLocalPheromone(List<Node>[] nodes, int fitnessValue, List<Edge> edges)
+        {
+            Pheromone_0 = 1.0 / (fitnessValue + 1.0);
+
+            //All the edges between the v0 node and the very first node of the solution are added here
+            for (int i = 0; i < nodes[0].Count; i++)
+            {
+                edges.Add(new Edge()
                 {
-                    IndexNurseA = i,
-                    IndexNodeA = mainSolution[i].Index,
-                    IndexNurseB = i + 1,
-                    IndexNodeB = mainSolution[i + 1].Index,
-                    Pheromone = 1.0 / (fitnessValue + 1)
+                    IndexNodeA = 0,
+                    IndexNurseA = -1,
+                    IndexNurseB = 0,
+                    IndexNodeB = i,
+                    Pheromone = Pheromone_0
                 });
             }
+
+            for (int k = 0; k < nodes.Count() - 1; k++)
+            {
+                int indexNurseA = k;
+                int indexNurseB = k + 1;
+
+                for (int i = 0; i < nodes[indexNurseA].Count; i++)
+                {
+                    for (int j = 0; j < nodes[indexNurseB].Count; j++)
+                    {
+                        edges.Add(new Edge()
+                        {
+                            IndexNodeA = i,
+                            IndexNodeB = j,
+                            IndexNurseA = indexNurseA,
+                            IndexNurseB = indexNurseB,
+                            Pheromone = Pheromone_0
+                        });
+                    }
+                }
+            }
+        }
+
+        ///// <summary>
+        ///// Initializes the edges structure following the provided solution.
+        ///// In this phase the edge pheromone is set to the fitness value of the objective function using the provided solution
+        ///// </summary>
+        ///// <param name="mainSolution">Solution derived from the static heuristic info</param>
+        ///// <param name="edges">Empty list of edges</param>
+        //public void InitializeLocalPheromone(List<Node> mainSolution, List<Edge> edges)
+        //{
+        //    var fitnessValue = ApplySolution(mainSolution).Item1;
+
+        //    //Special Edges that link the imaginary v0 node (ants node) the the first node of the solution
+
+        //    edges.Add(
+        //        new Edge()
+        //        {
+        //            IndexNodeA = 0,
+        //            IndexNurseA = -1,
+        //            IndexNurseB = 0,
+        //            IndexNodeB = mainSolution.First(x => x.NurseId == 0).Index,
+        //            Pheromone = 1.0 / (fitnessValue + 1)
+        //        });
+
+        //    for (int i = 0; i < mainSolution.Count; i++)
+        //    {
+        //        if (mainSolution.Last() == mainSolution[i])
+        //            break;
+
+        //        edges.Add(new Edge
+        //        {
+        //            IndexNurseA = i,
+        //            IndexNodeA = mainSolution[i].Index,
+        //            IndexNurseB = i + 1,
+        //            IndexNodeB = mainSolution[i + 1].Index,
+        //            Pheromone = 1.0 / (fitnessValue + 1)
+        //        });
+        //    }
+        //}
+
+        public Tuple<double, int[,]> ApplySingleSolution(Node node, int[,] coverRequirements)
+        {
+            int[,] coverReqUpdated = new int[coverRequirements.GetLength(0), coverRequirements.GetLength(1)];
+            int uncoveredShifts = 0;
+            for (int i = 0; i < node.ShiftPattern.GetLength(0); i++)
+            {
+                for (int j = 0; j < node.ShiftPattern.GetLength(1); j++)
+                {
+                    int uncoverQuantity = coverRequirements[i, j] - ((node.ShiftPattern[i, j]) ? 1 : 0);
+                    uncoveredShifts += Math.Abs(uncoverQuantity);
+                    coverReqUpdated[i, j] = (uncoverQuantity > 0) ? uncoverQuantity : 0;
+                }
+            }
+
+            return new Tuple<double, int[,]>(node.StaticHeuristicInfo * uncoveredShifts, coverReqUpdated);
         }
 
 
@@ -78,6 +243,7 @@ namespace ACONRP
             //            Console.Write("\n");
             //#endif
 
+            int totalOvershift = 0; //the nurse has been assign to a shift that do not require any nurse
             foreach (Node node in mainSolution)
             {
                 for (int i = 0; i < node.ShiftPattern.GetLength(0); i++)
@@ -85,6 +251,7 @@ namespace ACONRP
                     for (int j = 0; j < node.ShiftPattern.GetLength(1); j++)
                     {
                         int uncoveredShifts = coverRequirements[i, j] - ((node.ShiftPattern[i, j]) ? 1 : 0);
+                        totalOvershift += (uncoveredShifts < 0) ? 1 : 0;
                         coverRequirements[i, j] = (uncoveredShifts < 0) ? 0 : uncoveredShifts;
                     }
                 }
@@ -109,7 +276,7 @@ namespace ACONRP
             //                Console.Write("\n");
             //            }
             //#endif
-            return new Tuple<int, int[,]>(objectiveFunctionValue, coverRequirements);
+            return new Tuple<int, int[,]>(objectiveFunctionValue + totalOvershift, coverRequirements);
         }
 
         /// <summary>
@@ -294,8 +461,6 @@ namespace ACONRP
 
             return 7;
         }
-
-
 
         private bool CheckDaysOnInterval(DateTime startDate, DateTime endDate, List<String> days)
         {

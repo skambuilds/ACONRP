@@ -13,11 +13,13 @@ namespace ACONRP
     {
         static void Main(string[] args)
         {
-            var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
+            var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
             ACOHandler handler = new ACOHandler(inputData);
 
             //Chiamata procedura di generazione dell'insieme di nodi che rappresentano gli shift pattern validi
             List<Node>[] nodes = handler.GenerationManager.PatternGenerationMethod();
+
+            NodeTest(nodes);
 
             List<Edge> edges = new List<Edge>();
 
@@ -26,12 +28,180 @@ namespace ACONRP
 
             handler.ComputeStaticHeuristic(nodes);
             List<Node> mainSolution = handler.ExtractSolution(nodes);
+            int mainSolutionFitnessValue = handler.ApplySolution(mainSolution).Item1;
 
-            handler.InitializeLocalPheromone(mainSolution, edges);
-            
+            handler.InitializeLocalPheromone(nodes, mainSolutionFitnessValue, edges);
+
+            int consecutiveNoImprovements = 0;
+            do
+            {
+                List<Ant> ants = Ant.GenerateAnts(1000, handler.CoverRequirements);
+                foreach (var ant in ants)
+                {
+                    for (int i = 0; i < handler.NurseNumber; i++)
+                    {
+                        var heuristicInformation = handler.ComputeHeuristicInfo(nodes[i], ant.CoverRequirements); //(statica*dinamica) 
+
+                        var selectedIndex = handler.NodeSelection(heuristicInformation, nodes, edges, i);
+                        var selectedNode = nodes[i].ElementAt(selectedIndex);
+
+                        ant.Solution.Add(selectedNode);
+                        ant.CoverRequirements = heuristicInformation[selectedIndex].Item2;
+                    }
+
+                    int antSolutionFitnessValue = handler.ApplySolution(ant.Solution).Item1;
+
+                    if (mainSolutionFitnessValue > antSolutionFitnessValue )
+                    {
+                        mainSolution = ant.Solution;
+                        mainSolutionFitnessValue = antSolutionFitnessValue;
+                        consecutiveNoImprovements = 0;
+                    }
+                    else
+                    {
+                        consecutiveNoImprovements++;
+                    }
+
+                    handler.LocalPheromoneUpdate(mainSolution, edges);
+                }
+
+                handler.GlobalPheromoneUpdate(mainSolution, mainSolutionFitnessValue, edges);
+
+            } while (consecutiveNoImprovements < 10000);
+
+            Console.WriteLine("\nThe ACO Algorithm has produced the following solution: ");
+            mainSolution.ForEach(x => Console.WriteLine($"Nurse {x.NurseId} - Node {x.Index}"));
+            Console.WriteLine($"This solution had a total fitness value of {mainSolutionFitnessValue}");
             Console.ReadKey();
 
         }
+
+        private static void NodeTest(List<Node>[] nodes)
+        {
+            List<Node> nurse_0_nodes =
+                new List<Node>()
+                {
+                    new Node(){Index = 0, NurseId = 0, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, true, false, false, false, false, true},
+                            { false, false, true, true, false, true, false},
+                            { false, false, false, false, false, false, false},
+                            { false, false, false, false, false, false, false}
+                        }
+                    },
+                    new Node(){Index = 1, NurseId = 0, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { true, false, false, false, true, true, false},
+                            { false, true, false, false, false, false, false},
+                            { false, false, false, false, false, false, false},
+                            { false, false, false, false, false, false, false}
+                        }
+                    },
+                    new Node(){Index = 2, NurseId = 0, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, true, false, false, true, false, false},
+                            { false, false, false, true, false, true, false},
+                            { true, false, false, false, false, false, false},
+                            { false, false, false, false, false, false, false}
+                        }
+                    }
+
+                };
+
+            List<Node> nurse_1_nodes =
+               new List<Node>()
+               {
+                    new Node(){Index = 0, NurseId = 1, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { true, false, false, false, true, false, false},
+                            { false, true, false, false, false, false, false},
+                            { false, false, false, false, false, true, true},
+                            { false, false, true, false, false, false, false}
+                        }
+                    },
+                    new Node(){Index = 1, NurseId = 1, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, false, true, false, false, false, false},
+                            { false, true, false, true, false, false, false},
+                            { false, false, false, false, false, true, true},
+                            { false, false, false, false, false, false, false}
+                        }
+                    },
+                    new Node(){Index = 2, NurseId = 1, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, false, true, false, true, false, true},
+                            { false, false, false, false, false, true, false},
+                            { false, true, false, false, false, false, false},
+                            { true, false, false, false, false, false, false}
+                        }
+                    }
+
+               };
+
+            List<Node> nurse_2_nodes =
+               new List<Node>()
+               {
+                    new Node(){Index = 0, NurseId = 2, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, false, false, false, true, false, false},
+                            { false, false, false, true, false, true, true},
+                            { true, true, false, false, false, false, false},
+                            { false, false, false, false, false, false, false}
+                        }
+                    },
+                    new Node(){Index = 1, NurseId = 2, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, true, false, true, false, false, false},
+                            { true, false, true, false, true, false, false},
+                            { false, false, false, false, false, false, false},
+                            { false, false, false, false, false, false, false}
+                        }
+                    },
+                    new Node(){Index = 2, NurseId = 2, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, false, false, true, true, true, false},
+                            { false, true, false, false, false, false, false},
+                            { false, false, false, false, false, false, false},
+                            { true, false, false, false, false, false, false}
+                        }
+                    }
+               };
+
+            List<Node> nurse_3_nodes =
+               new List<Node>()
+               {
+                    new Node(){Index = 0, NurseId = 3, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, true, true, true, false, true, false},
+                            { false, false, false, false, false, false, false},
+                            { false, false, false, false, false, false, false},
+                            { false, false, false, false, false, false, false}
+                        }
+                    },
+                    new Node(){Index = 1, NurseId = 3, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, true, false, true, false, true, false},
+                            { true, false, true, false, false, false, true},
+                            { false, false, false, false, false, false, false},
+                            { false, false, false, false, false, false, false}
+                        }
+                    },
+                    new Node(){Index = 2, NurseId = 3, StaticHeuristicInfo = 0,
+                        ShiftPattern = new bool[4,7]{
+                            { false, false, false, false, false, false, false},
+                            { true, true, false, false, false, false, false},
+                            { false, false, false, true, true, true, false},
+                            { false, false, false, false, false, false, false}
+                        }
+                    }
+
+               };
+            nodes[0] = nurse_0_nodes;
+            nodes[1] = nurse_1_nodes;
+            nodes[2] = nurse_2_nodes;
+            nodes[3] = nurse_3_nodes;
+        }
+
 
         private static List<Node> ACOAlgorithm()
         {
@@ -45,10 +215,10 @@ namespace ACONRP
             //List<Node>[] nodesA = GenerationManager.PatternGenerationMethod();
 
             //***3 - Fabrizio B.
-           // ComputeStaticHeuristic(nodesA);
+            // ComputeStaticHeuristic(nodesA);
 
             //***4
-         //  mainSolution = GetSolution(nodesA);
+            //  mainSolution = GetSolution(nodesA);
 
             //***5 - da agganciare Alessandro,  inserire metodo apposito per il calcolo della staticSolutionFitness
             //InitLocalPheromone(double staticSolutionFitness);
@@ -58,11 +228,11 @@ namespace ACONRP
                 List<Ant> ants = new List<Ant>(1000);
                 foreach (Ant ant in ants)
                 {
-                   // for (int i = 0; i < GenerationManager.numberOfNurses; i++)
+                    // for (int i = 0; i < GenerationManager.numberOfNurses; i++)
                     {
-                       // double[] nurseHeuristic = MetodoCalcoloEuristica(nodesA[i]);
-                       // Node tempNode = MetodoSceltaDelNodo(nurseHeuristic, edgeList);
-                       // ant.Solution.Add(tempNode);
+                        // double[] nurseHeuristic = MetodoCalcoloEuristica(nodesA[i]);
+                        // Node tempNode = MetodoSceltaDelNodo(nurseHeuristic, edgeList);
+                        // ant.Solution.Add(tempNode);
                     }
                     if (MetodoComparazioneSoluzioneMigliore(mainSolution, ant.Solution))
                     {
