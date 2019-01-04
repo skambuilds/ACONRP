@@ -9,7 +9,7 @@ namespace ACONRP
     public class GenerationManager
     {
 
-        private const string inputXmlFile = "Instances/toy1.xml";
+        //private const string inputXmlFile = "Instances/toy1.xml";
         //private const string inputXmlFile = "Instances/Sprint/sprint01.xml"; TODO: Check and solve the problem with the tag "DayOffRequests"
         public SchedulingPeriod InputData { get; set; }
         /// <summary>
@@ -43,7 +43,7 @@ namespace ACONRP
         /// <summary>
         /// Number of desired shift patterns for each possible assignment value
         /// </summary>
-        private int shiftsPerNumAssnt = 1;
+        private int shiftsPerNumAssnt = 1000;
         /// <summary>
         /// Indicates if the single assignment per day option is active
         /// </summary>
@@ -68,6 +68,7 @@ namespace ACONRP
             List<Node>[] nodesPerNurse = new List<Node>[numberOfNurses];
             for (int i = 0; i < numberOfNurses; i++)
             {
+                //Console.WriteLine($"Generation for nurse {i}..................");
                 ContractDataInitializer(i);
                 //Random generator initialization
                 Random rnd = new Random(i);
@@ -126,6 +127,7 @@ namespace ACONRP
             //Loop for each desired assignment value
             for (int i = minNumAssnt; i <= maxNumAssnt; i++)
             {
+                int alreadyExistCounter = 0;
                 //Create the amount of needed shift patterns
                 for (int j = 0; j < shiftsPerNumAssnt; j++)
                 {
@@ -163,6 +165,8 @@ namespace ACONRP
                     //Check if the last generated pattern is already in the node list
                     if (!(listContainsPattern(nodesSet, shiftPatternMatrix)))
                     {
+                        //if (alreadyExistCounter > 0) Console.WriteLine($".................Already exist: {alreadyExistCounter}");
+                        //Console.WriteLine($"Iteration {j}");
                         //PrintSingleShiftPattern(shiftPattern, j);
                         //PrintSingleShiftPattern(shiftPatternMatrix, j);
                         node.Index = nodeIndex;
@@ -171,9 +175,14 @@ namespace ACONRP
                         node.StaticHeuristicInfo = 0.00;
                         nodesSet.Add(node);
                         nodeIndex++;
+                        alreadyExistCounter = 0;
                     }
                     //If the last generated pattern is already in the node list "j" must be decreased
-                    else j--;
+                    else
+                    {
+                        alreadyExistCounter++;                        
+                        j--;
+                    }
                 }
 
             }
@@ -240,17 +249,35 @@ namespace ACONRP
         {
             int count = 0;
             Console.Write($"Iterazione {iterazione}:\n");
-
+            PrintDaysNumAndName();
             for (int i = 0; i < numShiftTypes; i++)
             {
                 for (int j = 0; j < numOfDays; j++)
                 {
                     if (shiftPatternMatrix[i, j]) count++;
-                    Console.Write((shiftPatternMatrix[i, j]) ? " 1" : " 0");
+                    Console.Write((shiftPatternMatrix[i, j]) ? "\t1" : "\t0");
                 }
                 Console.Write("\n");
             }
             Console.Write($" {count}\n");
+        }
+        /// <summary>
+        /// Print the number and the name of the days in the analyzed period
+        /// </summary>
+        private void PrintDaysNumAndName()
+        {
+            DateTime startDay = Convert.ToDateTime(InputData.StartDate);
+            for (int i = 0; i < numOfDays; i++)
+            {
+                Console.Write($"\t{i}");
+            }
+            Console.Write($"\n\n");
+            for (int j = 0; j < numOfDays; j++)
+            {
+                Console.Write($"\t{startDay.DayOfWeek.ToString().First()}");
+                startDay = startDay.AddDays(1);
+            }
+            Console.Write($"\n");
         }
         /// <summary>
         /// Print procedure for whole set of created nodes
