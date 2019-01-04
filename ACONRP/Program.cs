@@ -13,7 +13,8 @@ namespace ACONRP
     {
         static void Main(string[] args)
         {
-            var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
+            //var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
+            var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
             ACOHandler handler = new ACOHandler(inputData);
 
             //Chiamata procedura di generazione dell'insieme di nodi che rappresentano gli shift pattern validi
@@ -24,7 +25,7 @@ namespace ACONRP
             List<Edge> edges = new List<Edge>();
 
             //Stampa dei nodi generati
-            handler.GenerationManager.PrintAllNodes(nodes);
+            //handler.GenerationManager.PrintAllNodes(nodes);
 
             handler.ComputeStaticHeuristic(nodes);
             List<Node> mainSolution = handler.ExtractSolution(nodes);
@@ -51,7 +52,7 @@ namespace ACONRP
 
                     int antSolutionFitnessValue = handler.ApplySolution(ant.Solution).Item1;
 
-                    if (mainSolutionFitnessValue > antSolutionFitnessValue )
+                    if (mainSolutionFitnessValue > antSolutionFitnessValue)
                     {
                         mainSolution = ant.Solution;
                         mainSolutionFitnessValue = antSolutionFitnessValue;
@@ -67,7 +68,7 @@ namespace ACONRP
 
                 handler.GlobalPheromoneUpdate(mainSolution, mainSolutionFitnessValue, edges);
 
-            } while (consecutiveNoImprovements < 10000);
+            } while (consecutiveNoImprovements < 10);
 
             Console.WriteLine("\nThe ACO Algorithm has produced the following solution: ");
             mainSolution.ForEach(x => Console.WriteLine($"Nurse {x.NurseId} - Node {x.Index}"));

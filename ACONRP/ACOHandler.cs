@@ -80,7 +80,7 @@ namespace ACONRP
         }
 
         /// <summary>
-        /// Local pheromone update is apllied on the edges that belongs to the mainSolution
+        /// Local pheromone update is applied on the edges that belongs to the mainSolution
         /// </summary>
         /// <param name="mainSolution"></param>
         /// <param name="edges"></param>
@@ -202,21 +202,42 @@ namespace ACONRP
         public Tuple<double, int[,]> ApplySingleSolution(Node node, int[,] coverRequirements)
         {
             int[,] coverReqUpdated = new int[coverRequirements.GetLength(0), coverRequirements.GetLength(1)];
-            int uncoveredShifts = 0;
+            //Console.WriteLine("Starting cover requirements matrix:\n");
+            //PrintCoverRequirements(coverRequirements);
+            int coveredShifts = 0;
             for (int i = 0; i < node.ShiftPattern.GetLength(0); i++)
             {
                 for (int j = 0; j < node.ShiftPattern.GetLength(1); j++)
                 {
                     int uncoverQuantity = coverRequirements[i, j] - ((node.ShiftPattern[i, j]) ? 1 : 0);
-                    uncoveredShifts += Math.Abs(uncoverQuantity);
+                    if (uncoverQuantity >= 0)
+                    {
+                        coveredShifts += coverRequirements[i, j] - uncoverQuantity;
+                    }
+                    else
+                    {
+                        coveredShifts += coverRequirements[i, j] - (Math.Abs(coverRequirements[i, j] - uncoverQuantity));
+                    }
+                    //coveredShifts += Math.Abs(uncoverQuantity);
                     coverReqUpdated[i, j] = (uncoverQuantity > 0) ? uncoverQuantity : 0;
                 }
             }
-
-            return new Tuple<double, int[,]>(node.StaticHeuristicInfo * uncoveredShifts, coverReqUpdated);
+            coveredShifts = (coveredShifts < 0) ? 1 : coveredShifts;
+            //Console.WriteLine("Updated cover requirements matrix:\n");
+            //PrintCoverRequirements(coverReqUpdated);
+            return new Tuple<double, int[,]>(node.StaticHeuristicInfo * coveredShifts, coverReqUpdated);
         }
-
-
+        public void PrintCoverRequirements(int[,] coverRequirements)
+        {
+            for (int i = 0; i < coverRequirements.GetLength(0); i++)
+            {
+                for (int j = 0; j < coverRequirements.GetLength(1); j++)
+                {
+                    Console.Write($" {coverRequirements[i, j]}");
+                }
+                Console.Write("\n");
+            }
+        }
         /// <summary>
         /// Returns a tuple where:
         ///     the first element is the sum of the uncovered requirement shifts
