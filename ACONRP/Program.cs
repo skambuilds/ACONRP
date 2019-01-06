@@ -17,15 +17,14 @@ namespace ACONRP
             var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
             ACOHandler handler = new ACOHandler(inputData);
 
-            //Chiamata procedura di generazione dell'insieme di nodi che rappresentano gli shift pattern validi
-            List<Node>[] nodes = handler.GenerationManager.PatternGenerationMethod();
+            List<Node>[] nodes = handler.GenerationManager.GetShiftPatterns();
 
             NodeTest(nodes);
 
             List<Edge> edges = new List<Edge>();
 
             //Stampa dei nodi generati
-            //handler.GenerationManager.PrintAllNodes(nodes);
+            handler.GenerationManager.PrintAllNodes(nodes);
 
             handler.ComputeStaticHeuristic(nodes);
             List<Node> mainSolution = handler.ExtractSolution(nodes);
