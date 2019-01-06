@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,14 +9,11 @@ namespace ACONRP
 {
     public class GenerationManager
     {
-
-        //private const string inputXmlFile = "Instances/toy1.xml";
-        //private const string inputXmlFile = "Instances/Sprint/sprint01.xml"; TODO: Check and solve the problem with the tag "DayOffRequests"
         public SchedulingPeriod InputData { get; set; }
         /// <summary>
         /// Number of nurses
         /// </summary>
-        public int numberOfNurses { get; set; }
+        private int numberOfNurses { get; set; }
         /// <summary>
         /// Number of shift types
         /// </summary>
@@ -53,6 +51,12 @@ namespace ACONRP
         /// </summary>
         private bool circularTimePeriod = false;
 
+        private int maximumLimit = 2000;
+
+        private string shiftDirectoryName = "ShiftPatterns/";
+        private string shiftsFileName = "ShiftPatternsNurse";
+        private string shiftsFileExt = ".txt";
+
         /// <summary>
         /// Constractor for the pattern generation function
         /// </summary>
@@ -61,32 +65,112 @@ namespace ACONRP
         {
             GenericInputDataInitializer(inputData);
         }
-
-
-        public List<Node>[] PatternGenerationMethod()
+        public List<Node>[] GetShiftPatterns()
+        {
+            if (CheckShiftPatternFilesExistance())
+                return PatternLoadingMethod();
+            else
+                //Chiamata procedura di generazione dell'insieme di nodi che rappresentano gli shift pattern validi
+                return PatternGenerationMethod();
+        }
+        /// <summary>
+        /// Check the existance of the all shift pattern files
+        /// </summary>
+        /// <returns>Boolean value</returns>
+        public bool CheckShiftPatternFilesExistance()
+        {
+            for (int i = 0; i < numberOfNurses; i++)
+            {
+                if (System.IO.File.Exists($@"{GetShiftsFileName(i)}"))
+                {
+                    FileInfo f = new FileInfo($@"{GetShiftsFileName(i)}");
+                    if (f.Length == 0)
+                    {
+                        Console.WriteLine($"The {GetShiftsFileName(i)} file is empty, the shift pattern generation will be executed");
+                        return false;
+                    }
+                }
+                else {
+                    Console.WriteLine($"The {GetShiftsFileName(i)} does not exist, the shift pattern generation will be executed");
+                    return false;
+                }
+            }
+            return true;
+        }
+        private string GetShiftsFileName(int id)
+        {
+            return $"{shiftDirectoryName}{shiftsFileName}{id}{shiftsFileExt}";
+        }
+        private List<Node>[] PatternGenerationMethod()
         {
             List<Node>[] nodesPerNurse = new List<Node>[numberOfNurses];
             for (int i = 0; i < numberOfNurses; i++)
             {
-                //Console.WriteLine($"Generation for nurse {i}..................");
                 ContractDataInitializer(i);
                 //Random generator initialization
                 Random rnd = new Random(i);
+                Console.Write($"Generation for nurse {i}  ");
+                var watch = System.Diagnostics.Stopwatch.StartNew();
                 nodesPerNurse[i] = ShiftPatternsGenerator(rnd, i);
+                watch.Stop();
+                var elapsedMs = watch.ElapsedMilliseconds;
+                Console.Write($"completed in {elapsedMs}ms\n");
             }
+            return nodesPerNurse;
+        }
+        /// <summary>
+        /// Read the shift patterns from .txt files
+        /// </summary>
+        /// <returns>A lists of nodes array which contains for each nurse their set of nodes</returns>
+        private List<Node>[] PatternLoadingMethod()
+        {
+            List<Node>[] nodesPerNurse = new List<Node>[numberOfNurses];
+            for (int i = 0; i < numberOfNurses; i++)
+            {
+
+                List<Node> nodesSet = new List<Node>();
+                int lineCounter = 0;
+                string line = string.Empty;
+                try
+                {
+                    System.IO.StreamReader file = new System.IO.StreamReader($@"{GetShiftsFileName(i)}");
+                    while ((line = file.ReadLine()) != null)
+                    {
+                        char[] shiftPattern = line.ToArray();
+                        bool[,] shiftPatternMatrix = ArrayToMatrixConverter(shiftPattern);
+                        Node node = new Node();
+                        node.Index = lineCounter;
+                        node.NurseId = i;
+                        node.ShiftPattern = shiftPatternMatrix;
+                        node.StaticHeuristicInfo = 0.00;
+                        nodesSet.Add(node);
+                        lineCounter++;
+                    }
+                    file.Close();
+                    nodesPerNurse[i] = nodesSet;
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"An error has occurred during the {GetShiftsFileName(i)} file reading:");
+                    Console.WriteLine(ex.Message);
+                }
+            }
+            Console.WriteLine($"The shift patterns have been loaded correctly from .txt files");
             return nodesPerNurse;
         }
         /// <summary>
         /// Generic input data initializer procedure via xml file reading
         /// </summary>
-        private void GenericInputDataInitializer(SchedulingPeriod inputData)
+        private void GenericInputDataInitializer(SchedulingPeriod schedulingData)
         {
-            numberOfNurses = inputData.Employees.Employee.Count;
-            numShiftTypes = inputData.ShiftTypes.Shift.Count;
-            DateTime startDate = Convert.ToDateTime(inputData.StartDate);
-            DateTime endDate = Convert.ToDateTime(inputData.EndDate);
+            InputData = schedulingData;
+
+            numberOfNurses = InputData.Employees.Employee.Count;
+            numShiftTypes = InputData.ShiftTypes.Shift.Count;
+            DateTime startDate = Convert.ToDateTime(InputData.StartDate);
+            DateTime endDate = Convert.ToDateTime(InputData.EndDate);
             numOfDays = endDate.Day - startDate.Day + 1;
-            InputData = inputData;
         }
         /// <summary>
         /// Employee's contract data initializer procedure
@@ -124,70 +208,131 @@ namespace ACONRP
             //Counter of created nodes used as node index
             int nodeIndex = 0;
 
-            //Loop for each desired assignment value
-            for (int i = minNumAssnt; i <= maxNumAssnt; i++)
+            CheckAndCreateDirectory();
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter($@"{GetShiftsFileName(nurseId)}", false))
             {
-                int alreadyExistCounter = 0;
-                //Create the amount of needed shift patterns
-                for (int j = 0; j < shiftsPerNumAssnt; j++)
+                bool dashFlag = true;
+                bool backFlag = true;
+                //file.WriteLine($"NurseId: {nurseId}");
+                //Loop for each desired assignment value
+                for (int i = minNumAssnt; i <= maxNumAssnt; i++)
                 {
-                    Node node = new Node();
-                    //Boolean array which will contain the randomly generated shift pattern
-                    bool[] shiftPattern = new bool[totalNumOfShifts];
-                    //Starting value for the comparison with the values in the active indexes list
-                    int baseComparisonValue = 0;
-                    indexesList.Clear();
-                    activeIndexes.Clear();
-                    actualRemovedElements.Clear();
-
-                    IndexesListInitializer(indexesList, totalNumOfShifts, 0);
-                    IndexesListInitializer(activeIndexes, totalNumOfShifts, 0);
-
-                    //Perform a number of iteration to reach the number of assignment specified in the first for loop
-                    for (int k = 0; k < i; k++)
+                    int alreadyExistCounter = 0;
+                    //Create the amount of needed shift patterns
+                    //for (int j = 0; j < shiftsPerNumAssnt; j++)
+                    int j = 0;
+                    do
                     {
-                        //Check the maximum consecutive working days value and remove from the indexes list the days indexes which can determine a violation
-                        RemoveConsecutiveDays(ref baseComparisonValue, indexesList, actualRemovedElements, activeIndexes);
+                        
+                        Node node = new Node();
+                        //Boolean array which will contain the randomly generated shift pattern
+                        bool[] shiftPattern = new bool[totalNumOfShifts];
+                        //Starting value for the comparison with the values in the active indexes list
+                        int baseComparisonValue = 0;
+                        indexesList.Clear();
+                        activeIndexes.Clear();
+                        actualRemovedElements.Clear();
 
-                        //Error checker circularTimePeriod = true 
-                        //if (k == 4 && indexesList.Count > 0)
-                        //{
-                        //    Console.WriteLine("Errore! Attenzione!");
-                        //    PrintSingleShiftPattern(shiftPattern, numShiftTypes, k);
-                        //}
+                        IndexesListInitializer(indexesList, totalNumOfShifts, 0);
+                        IndexesListInitializer(activeIndexes, totalNumOfShifts, 0);
 
-                        List<int> removedElements = RandomShiftAssigner(rnd, indexesList, shiftPattern);
-                        //Add and remove the randomly extracted elements from the respective control lists
-                        RemoveElementsToTotalList(removedElements, activeIndexes);
-                        AddElementsToTotalList(removedElements, actualRemovedElements);
+                        //Perform a number of iteration to reach the number of assignment specified in the first for loop
+                        for (int k = 0; k < i; k++)
+                        {
+                            //Check the maximum consecutive working days value and remove from the indexes list the days indexes which can determine a violation
+                            RemoveConsecutiveDays(ref baseComparisonValue, indexesList, actualRemovedElements, activeIndexes);
+
+                            //Error checker circularTimePeriod = true 
+                            //if (k == 4 && indexesList.Count > 0)
+                            //{
+                            //    Console.WriteLine("Errore! Attenzione!");
+                            //    PrintSingleShiftPattern(shiftPattern, numShiftTypes, k);
+                            //}
+
+                            List<int> removedElements = RandomShiftAssigner(rnd, indexesList, shiftPattern);
+                            //Add and remove the randomly extracted elements from the respective control lists
+                            RemoveElementsToTotalList(removedElements, activeIndexes);
+                            AddElementsToTotalList(removedElements, actualRemovedElements);
+                        }
+                        bool[,] shiftPatternMatrix = ArrayToMatrixConverter(shiftPattern);
+                        //Check if the last generated pattern is already in the node list
+                        if (!(listContainsPattern(nodesSet, shiftPatternMatrix)))
+                        {
+
+                            //Console.WriteLine($"Iteration {j}");
+                            //PrintSingleShiftPattern(shiftPattern, j);
+                            //PrintSingleShiftPattern(shiftPatternMatrix, j);
+
+                            for (int l = 0; l < shiftPattern.Length; l++)
+                            {
+                                file.Write((shiftPattern[l] == true) ? '1' : '0');
+                            }
+                            file.Write('\n');
+
+                            node.Index = nodeIndex;
+                            node.NurseId = nurseId;
+                            node.ShiftPattern = shiftPatternMatrix;
+                            node.StaticHeuristicInfo = 0.00;
+                            nodesSet.Add(node);
+                            nodeIndex++;
+
+                            BarAnimation(ref dashFlag, ref backFlag);
+
+                            int maximumUnsuccessfulIter = maximumLimit / 2;
+                            if (alreadyExistCounter >= (maximumUnsuccessfulIter))
+                            {
+                                Console.WriteLine($"\nThere have been {alreadyExistCounter} generations of an existing shift pattern");
+                                maximumLimit += alreadyExistCounter;
+                                Console.WriteLine($"The maximum consecutive unsuccessful generations limit is now: {maximumLimit}");
+                            }
+                            alreadyExistCounter = 0;
+                            j++;
+                        }
+                        //If the last generated pattern is already in the node list "j" must be decreased
+                        else
+                        {
+                            alreadyExistCounter++;
+                            //j--;
+                        }
                     }
-                    bool[,] shiftPatternMatrix = ArrayToMatrixConverter(shiftPattern);
-                    //Check if the last generated pattern is already in the node list
-                    if (!(listContainsPattern(nodesSet, shiftPatternMatrix)))
-                    {
-                        //if (alreadyExistCounter > 0) Console.WriteLine($".................Already exist: {alreadyExistCounter}");
-                        //Console.WriteLine($"Iteration {j}");
-                        //PrintSingleShiftPattern(shiftPattern, j);
-                        //PrintSingleShiftPattern(shiftPatternMatrix, j);
-                        node.Index = nodeIndex;
-                        node.NurseId = nurseId;
-                        node.ShiftPattern = shiftPatternMatrix;
-                        node.StaticHeuristicInfo = 0.00;
-                        nodesSet.Add(node);
-                        nodeIndex++;
-                        alreadyExistCounter = 0;
-                    }
-                    //If the last generated pattern is already in the node list "j" must be decreased
-                    else
-                    {
-                        alreadyExistCounter++;                        
-                        j--;
-                    }
+                    while (alreadyExistCounter < maximumLimit && j < maximumLimit);
+                    Console.Write("\b- ");
                 }
-
             }
             return nodesSet;
         }
+
+        private static void BarAnimation(ref bool dashFlag, ref bool backFlag)
+        {
+            Console.Write("\b");
+            if (dashFlag)
+            {
+                Console.Write("-");
+                dashFlag = false;
+            }
+            else {
+                if (backFlag)
+                {
+                    Console.Write("\\");
+                    backFlag = false;
+                }
+                else
+                {
+                    Console.Write("/");
+                    backFlag = true;
+                }
+                dashFlag = true;
+            }
+        }
+
+        private void CheckAndCreateDirectory()
+        {
+            if (!(Directory.Exists(shiftDirectoryName)))
+            {
+                Directory.CreateDirectory(shiftDirectoryName);
+            }
+        }
+
         /// <summary>
         /// Shift pattern array to shift pattern matrix converter
         /// </summary>
@@ -208,6 +353,26 @@ namespace ACONRP
                     columnIndex++;
                 }
                 if (shiftPattern[i])
+                    shiftPatternMatrix[rowIndex, columnIndex] = true;
+                rowIndex++;
+            }
+            return shiftPatternMatrix;
+        }
+        private bool[,] ArrayToMatrixConverter(char[] shiftPattern)
+        {
+            bool[,] shiftPatternMatrix = new bool[numShiftTypes, numOfDays];
+            //Total number of shifts in the array
+            int totalNumOfShifts = numShiftTypes * numOfDays;
+            int rowIndex = 0;
+            int columnIndex = 0;
+            for (int i = 0; i < totalNumOfShifts; i++)
+            {
+                if (rowIndex == numShiftTypes)
+                {
+                    rowIndex = 0;
+                    columnIndex++;
+                }
+                if (shiftPattern[i].Equals('1'))
                     shiftPatternMatrix[rowIndex, columnIndex] = true;
                 rowIndex++;
             }
