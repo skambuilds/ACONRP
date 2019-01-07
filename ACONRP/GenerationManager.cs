@@ -29,7 +29,7 @@ namespace ACONRP
         /// <summary>
         /// Minimum number of assignment in the considered time period
         /// </summary>
-        private int minNumAssnt = 5;
+        private int minNumAssnt = 3;
         /// <summary>
         /// Maximum number of consecutive working days which can be assigned
         /// </summary>
@@ -51,7 +51,7 @@ namespace ACONRP
         /// </summary>
         private bool circularTimePeriod = false;
 
-        private int maximumLimit = 2000;
+        private decimal maximumLimit = 2000;
 
         private string shiftDirectoryName = "ShiftPatterns/";
         private string shiftsFileName = "ShiftPatternsNurse";
@@ -217,13 +217,15 @@ namespace ACONRP
                 //Loop for each desired assignment value
                 for (int i = minNumAssnt; i <= maxNumAssnt; i++)
                 {
+                    decimal iterationLimit = maximumLimit;
+                    if (binomialCoefficentCalc(totalNumOfShifts, i) < maximumLimit) iterationLimit = binomialCoefficentCalc(totalNumOfShifts, i);
+                    //Console.Write($"Expected number of nodes: {iterationLimit}  ");
                     int alreadyExistCounter = 0;
                     //Create the amount of needed shift patterns
                     //for (int j = 0; j < shiftsPerNumAssnt; j++)
                     int j = 0;
                     do
                     {
-                        
                         Node node = new Node();
                         //Boolean array which will contain the randomly generated shift pattern
                         bool[] shiftPattern = new bool[totalNumOfShifts];
@@ -278,12 +280,12 @@ namespace ACONRP
 
                             BarAnimation(ref dashFlag, ref backFlag);
 
-                            int maximumUnsuccessfulIter = maximumLimit / 2;
+                            decimal maximumUnsuccessfulIter = iterationLimit / 2;
                             if (alreadyExistCounter >= (maximumUnsuccessfulIter))
                             {
                                 Console.WriteLine($"\nThere have been {alreadyExistCounter} generations of an existing shift pattern");
-                                maximumLimit += alreadyExistCounter;
-                                Console.WriteLine($"The maximum consecutive unsuccessful generations limit is now: {maximumLimit}");
+                                iterationLimit += alreadyExistCounter;
+                                Console.WriteLine($"The maximum consecutive unsuccessful generations limit is now: {iterationLimit}");
                             }
                             alreadyExistCounter = 0;
                             j++;
@@ -295,7 +297,7 @@ namespace ACONRP
                             //j--;
                         }
                     }
-                    while (alreadyExistCounter < maximumLimit && j < maximumLimit);
+                    while (alreadyExistCounter < iterationLimit && j < iterationLimit);
                     Console.Write("\b- ");
                 }
             }
