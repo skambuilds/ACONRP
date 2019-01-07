@@ -33,16 +33,78 @@ namespace ACONRP
            {"Sunday", new List<int>() }
         };
         private double Pheromone_0 { get; set; }
+        private double CurrentPheromone_0 { get; set; }
 
 
         public int NodeSelection(Tuple<double, int[,]>[] heuristicInformation, List<Node>[] nodes, List<Edge> edges, int nurseDestinationIdex)
         {
             int nurseSourceIndex = nurseDestinationIdex - 1;
-            int nodeOnDestination = nodes[nurseDestinationIdex].Count;
+
+            int nodesOnSource = 1;
+            if (nurseSourceIndex >= 0) nodesOnSource = nodes[nurseSourceIndex].Count;
+            int nodesOnDestination = nodes[nurseDestinationIdex].Count;
 
             //proability p(i,j)
 
-            var probability = new double[nodeOnDestination];
+            var probability = new double[nodesOnDestination];
+
+            //Number of edges calculation in order to calculate the 
+            int numberOfEdges = nodesOnSource * nodesOnDestination;
+            var edgesFound = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex);
+            int numberOfEdgesFound = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex).Count<Edge>();
+            int standardEdges = numberOfEdges - numberOfEdgesFound;
+            //***
+            var overallProbability = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex)
+                                            .Sum(x => Math.Pow(x.Pheromone, PARAM_ALPHA) * Math.Pow(heuristicInformation[x.IndexNodeB].Item1, PARAM_BETA));
+
+            for (int i = 0; i < nodesOnDestination; i++)
+            {
+                if (CheckIndexNode(edgesFound, i)) continue;
+                else overallProbability += Math.Pow(CurrentPheromone_0, PARAM_ALPHA) * Math.Pow(heuristicInformation[i].Item1, PARAM_BETA);
+            }
+
+            foreach (var edge in edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex))
+            {
+                probability[edge.IndexNodeB] = (Math.Pow(edge.Pheromone, PARAM_ALPHA) * Math.Pow(heuristicInformation[edge.IndexNodeB].Item1, PARAM_BETA)) / overallProbability;
+            }
+
+            for (int i = 0; i < nodesOnDestination; i++)
+            {
+                if (CheckIndexNode(edgesFound, i)) continue;
+                else probability[i] += (Math.Pow(CurrentPheromone_0, PARAM_ALPHA) * Math.Pow(heuristicInformation[i].Item1, PARAM_BETA)) / overallProbability;
+            }
+
+            Random rnd = new Random();
+            //pseudorandom proportional rule
+            if (rnd.NextDouble() < PARAM_Q0)
+            {
+                double max = probability.Cast<double>().Max();
+                return Array.IndexOf(probability, max);
+            }
+            else
+            {
+                return rnd.Next(0, probability.Count());
+            }
+        }
+
+        private static bool CheckIndexNode(IEnumerable<Edge> edgesFound, int i)
+        {
+            foreach (var edge in edgesFound)
+            {
+                if (edge.IndexNodeB == i) return true;
+            }
+            return false;
+        }
+
+        public int NodeSelectionOLD(Tuple<double, int[,]>[] heuristicInformation, List<Node>[] nodes, List<Edge> edges, int nurseDestinationIdex)
+        {
+            int nurseSourceIndex = nurseDestinationIdex - 1;
+            int nodesOnDestination = nodes[nurseDestinationIdex].Count;
+
+            //proability p(i,j)
+
+            var probability = new double[nodesOnDestination];
+
             var overallProbability = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex)
                                             .Sum(x => Math.Pow(x.Pheromone, PARAM_ALPHA) * Math.Pow(heuristicInformation[x.IndexNodeB].Item1, PARAM_BETA));
 
@@ -79,12 +141,59 @@ namespace ACONRP
             }
         }
 
+        internal void ListOfEdgesUpdate(List<Node> mainSolution, List<Edge> edges)
+        {
+            edges.Add(new Edge()
+            {
+                IndexNodeA = 0,
+                IndexNurseA = -1,
+                IndexNurseB = mainSolution[0].NurseId,
+                IndexNodeB = mainSolution[0].Index,
+                Pheromone = CurrentPheromone_0
+            });
+
+            foreach (var node in mainSolution)
+            {
+                if (mainSolution.Last() == node)
+                    break;
+                var nextNode = mainSolution.First(n => n.NurseId == node.NurseId + 1);
+
+                edges.Add(new Edge()
+                {
+                    IndexNodeA = node.Index,
+                    IndexNurseA = node.NurseId,
+                    IndexNurseB = nextNode.NurseId,
+                    IndexNodeB = nextNode.Index,
+                    Pheromone = CurrentPheromone_0
+                });
+            }
+        }
         /// <summary>
         /// Local pheromone update is applied on the edges that belongs to the mainSolution
         /// </summary>
         /// <param name="mainSolution"></param>
         /// <param name="edges"></param>
         internal void LocalPheromoneUpdate(List<Node> mainSolution, List<Edge> edges)
+        {
+            var solutionEdgeList = new List<Edge>();
+            foreach (var node in mainSolution)
+            {
+                if (mainSolution.Last() == node)
+                    break;
+
+                var nextNode = mainSolution.First(n => n.NurseId == node.NurseId + 1);
+
+                var solutionEdge = edges.First(ed => ed.IndexNurseA == node.NurseId && ed.IndexNurseB == nextNode.NurseId && ed.IndexNodeA == node.Index && ed.IndexNodeB == nextNode.Index);
+                solutionEdge.Pheromone = (1.0 - PARAM_EPSILON) * solutionEdge.Pheromone + PARAM_EPSILON * Pheromone_0;
+                solutionEdgeList.Add(solutionEdge);
+
+            }
+
+            //simple pheromone evaporation update
+            edges.Except(solutionEdgeList).ToList().ForEach(x => x.Pheromone = (1.0 - PARAM_EPSILON) * x.Pheromone);
+            CurrentPheromone_0 = ((1.0 - PARAM_EPSILON) * CurrentPheromone_0);
+        }
+        internal void LocalPheromoneUpdateOLD(List<Node> mainSolution, List<Edge> edges)
         {
             var solutionEdgeList = new List<Edge>();
             foreach (var node in mainSolution)
@@ -120,6 +229,12 @@ namespace ACONRP
             }
 
             return heuristicInfo;
+        }
+
+        internal void InitializeStandardPheromone(int fitnessValue)
+        {
+            Pheromone_0 = 1.0 / (fitnessValue + 1.0);
+            CurrentPheromone_0 = Pheromone_0;
         }
 
         internal void InitializeLocalPheromone(List<Node>[] nodes, int fitnessValue, List<Edge> edges)

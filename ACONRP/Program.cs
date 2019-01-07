@@ -13,8 +13,8 @@ namespace ACONRP
     {
         static void Main(string[] args)
         {
-            //var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
-            var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
+            var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
+            //var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
             ACOHandler handler = new ACOHandler(inputData);
 
             List<Node>[] nodes = handler.GenerationManager.GetShiftPatterns();
@@ -24,17 +24,21 @@ namespace ACONRP
             List<Edge> edges = new List<Edge>();
 
             //Stampa dei nodi generati
-            handler.GenerationManager.PrintAllNodes(nodes);
+            //handler.GenerationManager.PrintAllNodes(nodes);
 
             handler.ComputeStaticHeuristic(nodes);
             List<Node> mainSolution = handler.ExtractSolution(nodes);
             int mainSolutionFitnessValue = handler.ApplySolution(mainSolution).Item1;
 
-            handler.InitializeLocalPheromone(nodes, mainSolutionFitnessValue, edges);
+            //handler.InitializeLocalPheromone(nodes, mainSolutionFitnessValue, edges);
+            handler.InitializeStandardPheromone(mainSolutionFitnessValue);
+            handler.ListOfEdgesUpdate(mainSolution, edges);
 
             int consecutiveNoImprovements = 0;
+            Console.Write("Solution construction ");
             do
             {
+                Console.Write(".");
                 List<Ant> ants = Ant.GenerateAnts(1000, handler.CoverRequirements);
                 foreach (var ant in ants)
                 {
@@ -54,6 +58,7 @@ namespace ACONRP
                     if (mainSolutionFitnessValue > antSolutionFitnessValue)
                     {
                         mainSolution = ant.Solution;
+                        handler.ListOfEdgesUpdate(mainSolution, edges);
                         mainSolutionFitnessValue = antSolutionFitnessValue;
                         consecutiveNoImprovements = 0;
                     }
