@@ -13,13 +13,13 @@ namespace ACONRP
     {
         static void Main(string[] args)
         {
-            var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
-            //var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
-            ACOHandler handler = new ACOHandler(inputData);
-
+            //var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
+            //var inputData = InputData.GetObjectDataFromFile("Instances/toy1.xml");
+            var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
+            ACOHandler handler = new ACOHandler(inputData);            
             List<Node>[] nodes = handler.GenerationManager.GetShiftPatterns();
 
-            NodeTest(nodes);
+            //NodeTest(nodes);
 
             List<Edge> edges = new List<Edge>();
 
@@ -39,7 +39,7 @@ namespace ACONRP
             do
             {
                 Console.Write(".");
-                List<Ant> ants = Ant.GenerateAnts(1000, handler.CoverRequirements);
+                List<Ant> ants = Ant.GenerateAnts(100, handler.CoverRequirements);
                 foreach (var ant in ants)
                 {
                     for (int i = 0; i < handler.NurseNumber; i++)
@@ -54,11 +54,15 @@ namespace ACONRP
                     }
 
                     int antSolutionFitnessValue = handler.ApplySolution(ant.Solution).Item1;
+                    int[,] antSolutionUpdatedCoverReq = handler.ApplySolution(ant.Solution).Item2;
+                    //Aggiornamento degli edge
+                    handler.ListOfEdgesUpdate(ant.Solution, edges);
 
                     if (mainSolutionFitnessValue > antSolutionFitnessValue)
                     {
+                        Console.WriteLine("Updated cover requirements after solution construction:");
+                        handler.PrintCoverRequirements(antSolutionUpdatedCoverReq);
                         mainSolution = ant.Solution;
-                        handler.ListOfEdgesUpdate(mainSolution, edges);
                         mainSolutionFitnessValue = antSolutionFitnessValue;
                         consecutiveNoImprovements = 0;
                     }
@@ -66,13 +70,12 @@ namespace ACONRP
                     {
                         consecutiveNoImprovements++;
                     }
-
                     handler.LocalPheromoneUpdate(mainSolution, edges);
                 }
 
                 handler.GlobalPheromoneUpdate(mainSolution, mainSolutionFitnessValue, edges);
 
-            } while (consecutiveNoImprovements < 10);
+            } while (consecutiveNoImprovements < 100);
 
             Console.WriteLine("\nThe ACO Algorithm has produced the following solution: ");
             mainSolution.ForEach(x => Console.WriteLine($"Nurse {x.NurseId} - Node {x.Index}"));

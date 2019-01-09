@@ -10,7 +10,7 @@ namespace ACONRP
     {
         public const double PARAM_ALPHA = 1.0;
         public const double PARAM_BETA = 2.0;
-        public const double PARAM_Q0 = 0.5;
+        public const double PARAM_Q0 = 0.9;
         public const double PARAM_EPSILON = 0.1;
         public const double PARAM_RHO = 0.1;
         public const double PARAM_LAMBDA = 200.0;
@@ -48,18 +48,18 @@ namespace ACONRP
 
             var probability = new double[nodesOnDestination];
 
-            //Number of edges calculation in order to calculate the 
+            //Number of edges calculation in order to calculate the probability function
             int numberOfEdges = nodesOnSource * nodesOnDestination;
-            var edgesFound = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex);
-            int numberOfEdgesFound = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex).Count<Edge>();
-            int standardEdges = numberOfEdges - numberOfEdgesFound;
-            //***
+            List<Edge> edgesFound = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex).ToList();
+
             var overallProbability = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex)
                                             .Sum(x => Math.Pow(x.Pheromone, PARAM_ALPHA) * Math.Pow(heuristicInformation[x.IndexNodeB].Item1, PARAM_BETA));
 
             for (int i = 0; i < nodesOnDestination; i++)
             {
-                if (CheckIndexNode(edgesFound, i)) continue;
+                if (CheckIndexNode(edgesFound, i)) {
+                    continue;
+                }
                 else overallProbability += Math.Pow(CurrentPheromone_0, PARAM_ALPHA) * Math.Pow(heuristicInformation[i].Item1, PARAM_BETA);
             }
 
@@ -87,7 +87,7 @@ namespace ACONRP
             }
         }
 
-        private static bool CheckIndexNode(IEnumerable<Edge> edgesFound, int i)
+        private static bool CheckIndexNode(List<Edge> edgesFound, int i)
         {
             foreach (var edge in edgesFound)
             {
@@ -141,31 +141,55 @@ namespace ACONRP
             }
         }
 
-        internal void ListOfEdgesUpdate(List<Node> mainSolution, List<Edge> edges)
+        internal void ListOfEdgesUpdate(List<Node> antSolution, List<Edge> edges)
         {
-            edges.Add(new Edge()
-            {
-                IndexNodeA = 0,
-                IndexNurseA = -1,
-                IndexNurseB = mainSolution[0].NurseId,
-                IndexNodeB = mainSolution[0].Index,
-                Pheromone = CurrentPheromone_0
-            });
 
-            foreach (var node in mainSolution)
+            List<Edge> firstEdge = edges.Where(ed => ed.IndexNurseA == -1 && ed.IndexNurseB == antSolution[0].NurseId && ed.IndexNodeA == 0 && ed.IndexNodeB == antSolution[0].Index).ToList();
+            if (firstEdge.Count > 0)
             {
-                if (mainSolution.Last() == node)
-                    break;
-                var nextNode = mainSolution.First(n => n.NurseId == node.NurseId + 1);
-
+                foreach (Edge ed in firstEdge)
+                {
+                    ed.Pheromone = (1.0 - PARAM_EPSILON) * ed.Pheromone + PARAM_EPSILON * Pheromone_0;
+                }
+            }
+            else
+            {
                 edges.Add(new Edge()
                 {
-                    IndexNodeA = node.Index,
-                    IndexNurseA = node.NurseId,
-                    IndexNurseB = nextNode.NurseId,
-                    IndexNodeB = nextNode.Index,
-                    Pheromone = CurrentPheromone_0
+                    IndexNodeA = 0,
+                    IndexNurseA = -1,
+                    IndexNurseB = antSolution[0].NurseId,
+                    IndexNodeB = antSolution[0].Index,
+                    Pheromone = Pheromone_0
                 });
+            }
+
+            foreach (var node in antSolution)
+            {
+                if (antSolution.Last() == node)
+                    break;
+
+                var nextNode = antSolution.First(n => n.NurseId == node.NurseId + 1);
+
+                List<Edge> solutionEdge = edges.Where(ed => ed.IndexNurseA == node.NurseId && ed.IndexNurseB == nextNode.NurseId && ed.IndexNodeA == node.Index && ed.IndexNodeB == nextNode.Index).ToList();
+                if (solutionEdge.Count > 0)
+                {
+                    foreach (Edge ed in solutionEdge)
+                    {
+                        ed.Pheromone = (1.0 - PARAM_EPSILON) * ed.Pheromone + PARAM_EPSILON * Pheromone_0;
+                    }                    
+                }
+                else
+                {
+                    edges.Add(new Edge()
+                    {
+                        IndexNodeA = node.Index,
+                        IndexNurseA = node.NurseId,
+                        IndexNurseB = nextNode.NurseId,
+                        IndexNodeB = nextNode.Index,
+                        Pheromone = Pheromone_0
+                    });
+                }
             }
         }
         /// <summary>
@@ -380,6 +404,8 @@ namespace ACONRP
             //#endif
 
             int totalOvershift = 0; //the nurse has been assign to a shift that do not require any nurse
+            //Console.WriteLine("Starting cover requirements matrix:\n");
+            //PrintCoverRequirements(coverRequirements);
             foreach (Node node in mainSolution)
             {
                 for (int i = 0; i < node.ShiftPattern.GetLength(0); i++)
@@ -412,6 +438,10 @@ namespace ACONRP
             //                Console.Write("\n");
             //            }
             //#endif
+
+            //Console.WriteLine("Updated cover requirements matrix:\n");
+            //PrintCoverRequirements(coverRequirements);
+
             return new Tuple<int, int[,]>(objectiveFunctionValue + totalOvershift, coverRequirements);
         }
 
