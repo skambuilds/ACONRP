@@ -13,7 +13,7 @@ namespace ACONRP
         /// <summary>
         /// Number of nurses
         /// </summary>
-        private int numberOfNurses { get; set; }
+        private int numberOfNurses { get; set; }        
         /// <summary>
         /// Number of shift types
         /// </summary>
@@ -39,9 +39,9 @@ namespace ACONRP
         /// </summary>
         private int minConsWorkDays = 2;
         /// <summary>
-        /// Number of desired shift patterns for each possible assignment value
+        /// Maximum number of shift patterns for each possible assignment value
         /// </summary>
-        private int shiftsPerNumAssnt = 1000;
+        private const decimal maximumLimit = 5000;
         /// <summary>
         /// Indicates if the single assignment per day option is active
         /// </summary>
@@ -51,9 +51,14 @@ namespace ACONRP
         /// </summary>
         private bool circularTimePeriod = false;
 
-        private decimal maximumLimit = 2000;
+        private const bool regenerate = false;
+        
+        private const int assntViolation = 2; //put 0 to disable
+        private const int maxConsViolation = 1;
+        private const int violationEvent = 20; //put 1 to disable
 
         private string shiftDirectoryName = "ShiftPatterns/";
+        private string istanceSubDirectory = String.Empty;
         private string shiftsFileName = "ShiftPatternsNurse";
         private string shiftsFileExt = ".txt";
 
@@ -66,12 +71,15 @@ namespace ACONRP
             GenericInputDataInitializer(inputData);
         }
         public List<Node>[] GetShiftPatterns()
-        {
-            if (CheckShiftPatternFilesExistance())
+        {            
+            if (regenerate == false && CheckShiftPatternFilesExistance())
                 return PatternLoadingMethod();
             else
+            {
+                if (regenerate) Console.WriteLine("Regeneration activeted");
                 //Chiamata procedura di generazione dell'insieme di nodi che rappresentano gli shift pattern validi
                 return PatternGenerationMethod();
+            }
         }
         /// <summary>
         /// Check the existance of the all shift pattern files
@@ -99,7 +107,13 @@ namespace ACONRP
         }
         private string GetShiftsFileName(int id)
         {
-            return $"{shiftDirectoryName}{shiftsFileName}{id}{shiftsFileExt}";
+            string fileName = $"{shiftDirectoryName}{istanceSubDirectory}{shiftsFileName}{id}{shiftsFileExt}";
+            return fileName;
+        }
+        private string GetShiftsPath()
+        {
+            string path = $"{ shiftDirectoryName}{istanceSubDirectory}";
+            return path;
         }
         private List<Node>[] PatternGenerationMethod()
         {
@@ -165,7 +179,7 @@ namespace ACONRP
         private void GenericInputDataInitializer(SchedulingPeriod schedulingData)
         {
             InputData = schedulingData;
-
+            istanceSubDirectory = $"{InputData.ID}/";
             numberOfNurses = InputData.Employees.Employee.Count;
             numShiftTypes = InputData.ShiftTypes.Shift.Count;
             DateTime startDate = Convert.ToDateTime(InputData.StartDate);
@@ -206,23 +220,34 @@ namespace ACONRP
             //List of removed indexes which have been randomly extracted
             List<int> actualRemovedElements = new List<int>();
             //Counter of created nodes used as node index
-            int nodeIndex = 0;
+            int nodeIndex = 0;           
 
             CheckAndCreateDirectory();
             using (System.IO.StreamWriter file = new System.IO.StreamWriter($@"{GetShiftsFileName(nurseId)}", false))
             {
                 bool dashFlag = true;
                 bool backFlag = true;
+                
                 //file.WriteLine($"NurseId: {nurseId}");
+                int minLimit;
+                int maxLimit;
+                if (minNumAssnt - assntViolation < 1) minLimit = 1;
+                else minLimit = minNumAssnt - assntViolation;
+                maxLimit = maxNumAssnt + assntViolation;
+
                 //Loop for each desired assignment value
-                for (int i = minNumAssnt; i <= maxNumAssnt; i++)
+                for (int i = minLimit; i <= maxLimit; i++)
                 {
                     decimal iterationLimit = maximumLimit;
-                    if (binomialCoefficentCalc(totalNumOfShifts, i) < maximumLimit) iterationLimit = binomialCoefficentCalc(totalNumOfShifts, i);
+                    decimal binCoefValue = BinomialCoefficentCalc(totalNumOfShifts, i);
+                    if (binCoefValue < maximumLimit) iterationLimit = binCoefValue;
                     //Console.Write($"Expected number of nodes: {iterationLimit}  ");
                     int alreadyExistCounter = 0;
+                    //Enable violation of the max consecutive working days constraint
+                    bool enableViolation = false;
                     //Create the amount of needed shift patterns
                     //for (int j = 0; j < shiftsPerNumAssnt; j++)
+
                     int j = 0;
                     do
                     {
@@ -242,7 +267,7 @@ namespace ACONRP
                         for (int k = 0; k < i; k++)
                         {
                             //Check the maximum consecutive working days value and remove from the indexes list the days indexes which can determine a violation
-                            RemoveConsecutiveDays(ref baseComparisonValue, indexesList, actualRemovedElements, activeIndexes);
+                            RemoveConsecutiveDays(ref baseComparisonValue, indexesList, actualRemovedElements, activeIndexes, enableViolation);
 
                             //Error checker circularTimePeriod = true 
                             //if (k == 4 && indexesList.Count > 0)
@@ -296,6 +321,11 @@ namespace ACONRP
                             alreadyExistCounter++;
                             //j--;
                         }
+                        int violationNum = (int)(iterationLimit - (iterationLimit / violationEvent));
+                        if (j == violationNum)
+                        {
+                            enableViolation = true;
+                        }                        
                     }
                     while (alreadyExistCounter < iterationLimit && j < iterationLimit);
                     Console.Write("\b- ");
@@ -329,9 +359,10 @@ namespace ACONRP
 
         private void CheckAndCreateDirectory()
         {
-            if (!(Directory.Exists(shiftDirectoryName)))
+            string shiftPath = GetShiftsPath();
+            if (!(Directory.Exists(shiftPath)))
             {
-                Directory.CreateDirectory(shiftDirectoryName);
+                Directory.CreateDirectory(shiftPath);
             }
         }
 
@@ -495,13 +526,15 @@ namespace ACONRP
         /// <param name="indexesList">Indexes list used for managing the random generation activity</param>
         /// <param name="removedIndexesList">List of removed indexes which have been randomly extracted</param>
         /// <param name="activeIndexesList">List of active indexes which have not been randomly extracted</param>
-        private void RemoveConsecutiveDays(ref int comparisonValue, List<int> indexesList, List<int> removedIndexesList, List<int> activeIndexesList)
+        private void RemoveConsecutiveDays(ref int comparisonValue, List<int> indexesList, List<int> removedIndexesList, List<int> activeIndexesList, bool enableViolation)
         {
             //The analisys take place only if the list of indexes is not empty
             if (!(indexesList.Count == 0))
             {
                 //Limit value used to anticipate a possible violation
-                int limitViolation = numShiftTypes * maxConsWorkDays;
+                int limitViolation;
+                if (enableViolation) limitViolation = numShiftTypes * (maxConsWorkDays + maxConsViolation);
+                else limitViolation = numShiftTypes * maxConsWorkDays;
                 //Number of location to check
                 int numLocationsToCheck = numShiftTypes * numOfDays;
                 //Difference counter
@@ -802,7 +835,7 @@ namespace ACONRP
         /// <param name="N"></param>
         /// <param name="K"></param>
         /// <returns>Risultato del calcalo</returns>
-        private decimal binomialCoefficentCalc(int N, int K)
+        private decimal BinomialCoefficentCalc(int N, int K)
         {
             decimal result = 1;
             for (int i = 1; i <= K; i++)
