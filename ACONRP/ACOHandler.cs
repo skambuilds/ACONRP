@@ -50,6 +50,7 @@ namespace ACONRP
 
             //Number of edges calculation in order to calculate the probability function
             int numberOfEdges = nodesOnSource * nodesOnDestination;
+            
             List<Edge> edgesFound = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex).ToList();
 
             var overallProbability = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex)
