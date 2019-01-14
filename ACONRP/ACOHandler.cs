@@ -103,7 +103,6 @@ namespace ACONRP
             int nodesOnDestination = nodes[nurseDestinationIdex].Count;
 
             //proability p(i,j)
-
             var probability = new double[nodesOnDestination];
 
             var overallProbability = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex)
