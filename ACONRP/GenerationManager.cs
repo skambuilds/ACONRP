@@ -53,9 +53,9 @@ namespace ACONRP
 
         private const bool regenerate = false;
         
-        private const int assntViolation = 2; //put 0 to disable
+        private const int assntViolation = 1; //put 0 to disable
         private const int maxConsViolation = 1;
-        private const int violationEvent = 20; //put 1 to disable
+        private const int violationEvent = 1; //put 1 to disable
 
         private string shiftDirectoryName = "ShiftPatterns/";
         private string istanceSubDirectory = String.Empty;
@@ -128,7 +128,7 @@ namespace ACONRP
                 nodesPerNurse[i] = ShiftPatternsGenerator(rnd, i);
                 watch.Stop();
                 var elapsedMs = watch.ElapsedMilliseconds;
-                Console.Write($"completed in {elapsedMs}ms\n");
+                Console.Write($"completed in {elapsedMs}ms with {nodesPerNurse[i].Count} shift patterns\n");
             }
             return nodesPerNurse;
         }
@@ -308,9 +308,9 @@ namespace ACONRP
                             decimal maximumUnsuccessfulIter = iterationLimit / 2;
                             if (alreadyExistCounter >= (maximumUnsuccessfulIter))
                             {
-                                Console.WriteLine($"\nThere have been {alreadyExistCounter} generations of an existing shift pattern");
                                 iterationLimit += alreadyExistCounter;
-                                Console.WriteLine($"The maximum consecutive unsuccessful generations limit is now: {iterationLimit}");
+                                //Console.WriteLine($"\nThere have been {alreadyExistCounter} generations of an existing shift pattern");
+                                //Console.WriteLine($"The maximum consecutive unsuccessful generations limit is now: {iterationLimit}");
                             }
                             alreadyExistCounter = 0;
                             j++;
@@ -322,7 +322,7 @@ namespace ACONRP
                             //j--;
                         }
                         int violationNum = (int)(iterationLimit - (iterationLimit / violationEvent));
-                        if (j == violationNum)
+                        if (j > 0 && j == violationNum)
                         {
                             enableViolation = true;
                         }                        
@@ -446,7 +446,7 @@ namespace ACONRP
         private void PrintSingleShiftPattern(bool[,] shiftPatternMatrix, int iterazione)
         {
             int count = 0;
-            Console.Write($"Iterazione {iterazione}:\n");
+            Console.Write($"Node {iterazione}:\n");
             PrintDaysNumAndName();
             for (int i = 0; i < numShiftTypes; i++)
             {
@@ -457,7 +457,7 @@ namespace ACONRP
                 }
                 Console.Write("\n");
             }
-            Console.Write($" {count}\n");
+            Console.Write($"Number of assigned shifts: {count}\n");
         }
         /// <summary>
         /// Print the number and the name of the days in the analyzed period
@@ -494,6 +494,17 @@ namespace ACONRP
                     j++;
                 }
             }
+        }
+       
+        public void PrintSolutionNodes(List<Node> solutionNodes)
+        {
+            int j = 0;
+                foreach (Node node in solutionNodes)
+                {
+                    Console.Write($"\nNurse {node.NurseId} - ");
+                    PrintSingleShiftPattern(node.ShiftPattern, node.Index);                    
+                }
+            
         }
         /// <summary>
         /// Add to a list procedure
