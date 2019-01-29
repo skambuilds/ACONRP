@@ -66,13 +66,15 @@ namespace ACONRP.Evaluator
 
             int i = 0;
             foreach(Shift shiftElement  in inputDataLocal.ShiftTypes.Shift)//TODO automatic shift identification based on start time and end time.
-            {   
+            {   //Use if evaluating sprint
                 if (shiftElement.ID == "E") { shiftTypesDict.Add(shiftElement.ID, 0); }
                 if (shiftElement.ID == "D") { shiftTypesDict.Add(shiftElement.ID, 1); }
                 if (shiftElement.ID == "L") { shiftTypesDict.Add(shiftElement.ID, 2); }
                 if (shiftElement.ID == "N") { shiftTypesDict.Add(shiftElement.ID, 3); }
-                //shiftTypesDict.Add(shiftElement.ID, i);
-                //i++;
+                //Use if evaluating Toy1
+                /*if (shiftElement.ID == "E") { shiftTypesDict.Add(shiftElement.ID, 0); }
+                if (shiftElement.ID == "L") { shiftTypesDict.Add(shiftElement.ID, 1); }
+                if (shiftElement.ID == "N") { shiftTypesDict.Add(shiftElement.ID, 2); }*/
             }
             c = new RequestedShiftOffCondition(numUnits, numDays, contract, shiftOffRequests, shiftTypesDict, startDate);
             conditions.Add(c);

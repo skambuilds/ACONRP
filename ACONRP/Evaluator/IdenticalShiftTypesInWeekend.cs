@@ -24,7 +24,7 @@ namespace ACONRP.Evaluator
             cost_max_pert_nr = new int[numUnits * numDays];
             cost_min_pert_nr = new int[numUnits * numDays];
 
-            int numWeekends = 4;
+            int numWeekends = 4;//TODO automatic numWeekends and firstSaturday recognition
             int firstSaturday = 1;
             int begin = firstSaturday * numUnits;
             if (firstSaturday == 0)
