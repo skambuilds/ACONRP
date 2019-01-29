@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ACONRP.Evaluator;
 
 namespace ACONRP
 {
@@ -16,6 +17,7 @@ namespace ACONRP
         public const double PARAM_LAMBDA = 200.0;
 
         public GenerationManager GenerationManager { get; set; }
+        public Evalutador Evaluator { get; set; }
         public SchedulingPeriod InputData { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
@@ -50,7 +52,7 @@ namespace ACONRP
 
             //Number of edges calculation in order to calculate the probability function
             int numberOfEdges = nodesOnSource * nodesOnDestination;
-            
+
             List<Edge> edgesFound = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex).ToList();
 
             var overallProbability = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex)
@@ -58,7 +60,8 @@ namespace ACONRP
 
             for (int i = 0; i < nodesOnDestination; i++)
             {
-                if (CheckIndexNode(edgesFound, i)) {
+                if (CheckIndexNode(edgesFound, i))
+                {
                     continue;
                 }
                 else overallProbability += Math.Pow(CurrentPheromone_0, PARAM_ALPHA) * Math.Pow(heuristicInformation[i].Item1, PARAM_BETA);
@@ -177,7 +180,7 @@ namespace ACONRP
                     foreach (Edge ed in solutionEdge)
                     {
                         ed.Pheromone = (1.0 - PARAM_EPSILON) * ed.Pheromone + PARAM_EPSILON * Pheromone_0;
-                    }                    
+                    }
                 }
                 else
                 {
@@ -479,6 +482,7 @@ namespace ACONRP
 
             NurseNumber = inputData.Employees.Employee.Count;
             GenerationManager = new GenerationManager(InputData);
+            Evaluator = new Evalutador(InputData);
 
             WParam = new double[inputData.Skills.Skill.Count];
             for (int i = 0; i < inputData.Skills.Skill.Count; i++)
@@ -532,13 +536,62 @@ namespace ACONRP
 
                 var nurseIndex = nurses.IndexOf(nurse);
 
+                //List<Node> toy1 =
+                //                new List<Node>()
+                //                {
+                //                new Node(){Index = 0, NurseId = 0, StaticHeuristicInfo = 0,
+                //        ShiftPattern = new bool[3,7]{
+                //            { false, false, false, true, true, false, false},
+                //            { true, false, false, false, false, true, true},
+                //            { false, true, false, false, false, false, false},
+                //        }
+                //    },
+                //                new Node(){Index = 0, NurseId = 1, StaticHeuristicInfo = 0,
+                //        ShiftPattern = new bool[3,7]{
+                //            { false, false, false, false, true, false, false},
+                //            { true, true, true, false, false, true, true},
+                //            { false, false, true, false, false, false, false},
+                //        }
+                //    },
+                //                new Node(){Index = 0, NurseId = 2, StaticHeuristicInfo = 0,
+                //        ShiftPattern = new bool[3,7]{
+                //            { false, false, false, false, false, true, true},
+                //            { false, true, true, false, false, false, false},
+                //            { false, false, false, true, false, false, false},
+                //        }
+                //    },
+                //                new Node(){Index = 0, NurseId = 3, StaticHeuristicInfo = 0,
+                //        ShiftPattern = new bool[3,7]{
+                //            { true, true, false, false, false, true, true},
+                //            { false, false, false, true, true, false, false},
+                //            { false, false, false, false, true, false, false},
+                //        }
+                //    },
+                //                new Node(){Index = 0, NurseId = 4, StaticHeuristicInfo = 0,
+                //        ShiftPattern = new bool[3,7]{
+                //            { true, false, true, false, false, false, false},
+                //            { false, false, false, true, true, false, false},
+                //            { true, false, false, false, false, false, false},
+                //        }
+                //    },
+                //                new Node(){Index = 0, NurseId = 5, StaticHeuristicInfo = 0,
+                //        ShiftPattern = new bool[3,7]{
+                //            { false, true, true, true, false, false, false},
+                //            { false, false, false, false, false, false, false},
+                //            { false, false, false, false, false, true, true},
+                //        }
+                //    }};
+                //var debugPenaltyToy1 = Evaluator.CalculatePenalty(nodi);
+
+                var costSoftConst = Evaluator.CalculatePenalty(nodes[nurseIndex]);
+
+
                 var costsUnwantedShift = HandleUnwantedShift(unwantedShift, nodes[nurseIndex]);
                 var costsUnwantedDay = HandleUnwantedDays(unwantedDays, nodes[nurseIndex]);
 
-
                 for (int i = 0; i < costsUnwantedDay.Count; i++)
                 {
-                    double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i);
+                    double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i) + costSoftConst;
                     nodes[nurseIndex].ElementAt(i).StaticHeuristicInfo = 1.0 / (1.0 + cost);
                 }
             }

@@ -46,7 +46,23 @@
   <ItemGroup>
     <Compile Include="ACOHandler.cs" />
     <Compile Include="Ant.cs" />
+    <Compile Include="Evaluator\AlternativeSkillCondition.cs" />
+    <Compile Include="Evaluator\CompleteWeekendsCondition.cs" />
+    <Compile Include="Evaluator\Condition.cs" />
+    <Compile Include="Evaluator\IdenticalShiftTypesInWeekend.cs" />
+    <Compile Include="Evaluator\MaxAndMinConsecutiveFreeDaysCondition.cs" />
+    <Compile Include="Evaluator\MaxAndMinConsecutiveWorkingDaysCondition.cs" />
+    <Compile Include="Evaluator\MaxAndMinConsecutiveWorkingWeekendsCondition.cs" />
+    <Compile Include="Evaluator\MaxAndMinNumAssignments.cs" />
+    <Compile Include="Evaluator\SingleAssignmentPerDay.cs" />
+    <Compile Include="Evaluator\RequestedDayOffCondition.cs" />
+    <Compile Include="Evaluator\RequestedDayOnCondition.cs" />
+    <Compile Include="Evaluator\RequestedShiftOffCondition.cs" />
+    <Compile Include="Evaluator\RequestedShiftOnCondition.cs" />
+    <Compile Include="Evaluator\ScheduleEvaluator.cs" />
+    <Compile Include="Evaluator\Evalutador.cs" />
     <Compile Include="Edge.cs" />
+    <Compile Include="Evaluator\Violation.cs" />
     <Compile Include="GenerationManager.cs" />
     <Compile Include="InputData.cs" />
     <Compile Include="Node.cs" />

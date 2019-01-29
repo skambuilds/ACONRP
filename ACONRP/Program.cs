@@ -14,8 +14,8 @@ namespace ACONRP
         static void Main(string[] args)
         {
             //var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
-            var inputData = InputData.GetObjectDataFromFile("Instances/toy1.xml");
-            //var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
+            //var inputData = InputData.GetObjectDataFromFile("Instances/toy1.xml");
+            var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
             ACOHandler handler = new ACOHandler(inputData);            
             List<Node>[] nodes = handler.GenerationManager.GetShiftPatterns();
 
