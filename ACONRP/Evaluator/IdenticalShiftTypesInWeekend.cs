@@ -8,10 +8,15 @@ namespace ACONRP.Evaluator
 {
     public class IdenticalShiftTypesInWeekend : Condition
     {
-        public IdenticalShiftTypesInWeekend(int numUnits, int numDays, Contract contract)
+
+
+        public IdenticalShiftTypesInWeekend(int numUnits, int numDays, Contract contract, int firstSaturday, int numWeekends)
         {
             this.name = "IDENTICAL_WEEKENDS";
+            this.firstSaturday = firstSaturday;
+            this.numWeekends = numWeekends;
             this.BuildNumbering(numUnits, numDays, contract);
+
         }
 
         protected override void BuildNumbering(int numUnits, int numDays, Contract contract)
@@ -24,8 +29,6 @@ namespace ACONRP.Evaluator
             cost_max_pert_nr = new int[numUnits * numDays];
             cost_min_pert_nr = new int[numUnits * numDays];
 
-            int numWeekends = 4;//TODO automatic numWeekends and firstSaturday recognition
-            int firstSaturday = 1;
             int begin = firstSaturday * numUnits;
             if (firstSaturday == 0)
             {

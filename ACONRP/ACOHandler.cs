@@ -535,63 +535,15 @@ namespace ACONRP
                 var unwantedDays = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length > 1)).ToList();
 
                 var nurseIndex = nurses.IndexOf(nurse);
-
-                //List<Node> toy1 =
-                //                new List<Node>()
-                //                {
-                //                new Node(){Index = 0, NurseId = 0, StaticHeuristicInfo = 0,
-                //        ShiftPattern = new bool[3,7]{
-                //            { false, false, false, true, true, false, false},
-                //            { true, false, false, false, false, true, true},
-                //            { false, true, false, false, false, false, false},
-                //        }
-                //    },
-                //                new Node(){Index = 0, NurseId = 1, StaticHeuristicInfo = 0,
-                //        ShiftPattern = new bool[3,7]{
-                //            { false, false, false, false, true, false, false},
-                //            { true, true, true, false, false, true, true},
-                //            { false, false, true, false, false, false, false},
-                //        }
-                //    },
-                //                new Node(){Index = 0, NurseId = 2, StaticHeuristicInfo = 0,
-                //        ShiftPattern = new bool[3,7]{
-                //            { false, false, false, false, false, true, true},
-                //            { false, true, true, false, false, false, false},
-                //            { false, false, false, true, false, false, false},
-                //        }
-                //    },
-                //                new Node(){Index = 0, NurseId = 3, StaticHeuristicInfo = 0,
-                //        ShiftPattern = new bool[3,7]{
-                //            { true, true, false, false, false, true, true},
-                //            { false, false, false, true, true, false, false},
-                //            { false, false, false, false, true, false, false},
-                //        }
-                //    },
-                //                new Node(){Index = 0, NurseId = 4, StaticHeuristicInfo = 0,
-                //        ShiftPattern = new bool[3,7]{
-                //            { true, false, true, false, false, false, false},
-                //            { false, false, false, true, true, false, false},
-                //            { true, false, false, false, false, false, false},
-                //        }
-                //    },
-                //                new Node(){Index = 0, NurseId = 5, StaticHeuristicInfo = 0,
-                //        ShiftPattern = new bool[3,7]{
-                //            { false, true, true, true, false, false, false},
-                //            { false, false, false, false, false, false, false},
-                //            { false, false, false, false, false, true, true},
-                //        }
-                //    }};
-                //var debugPenaltyToy1 = Evaluator.CalculatePenalty(nodi);
-
-                var costSoftConst = Evaluator.CalculatePenalty(nodes[nurseIndex]);
-
-
                 var costsUnwantedShift = HandleUnwantedShift(unwantedShift, nodes[nurseIndex]);
                 var costsUnwantedDay = HandleUnwantedDays(unwantedDays, nodes[nurseIndex]);
 
+                var costSoftConst = Evaluator.CalculatePenalty(nodes[nurseIndex]);
+
                 for (int i = 0; i < costsUnwantedDay.Count; i++)
                 {
-                    double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i) + costSoftConst;
+                    double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i) + costSoftConst.ElementAt(i);
+                    Console.WriteLine($"------------------------>\t COSTO : {costsUnwantedShift.ElementAt(i)} + {costsUnwantedDay.ElementAt(i)} + {costSoftConst.ElementAt(i)} = {cost}");
                     nodes[nurseIndex].ElementAt(i).StaticHeuristicInfo = 1.0 / (1.0 + cost);
                 }
             }

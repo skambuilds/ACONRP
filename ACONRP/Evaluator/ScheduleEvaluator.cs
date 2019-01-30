@@ -373,6 +373,7 @@ namespace ACONRP.Evaluator
                 temp += cCost;
             }
 
+
             return temp;
         }
 

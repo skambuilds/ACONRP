@@ -11,6 +11,8 @@ namespace ACONRP.Evaluator
     {
         protected int[] numbering;
         protected string name;
+        protected int firstSaturday;
+        protected int numWeekends;
         public int[] GetNumbering() { return numbering; }
         public string GetName() { return name; }
         public static readonly int Undefined = (int.MaxValue / 2);
@@ -173,6 +175,7 @@ namespace ACONRP.Evaluator
         abstract protected void BuildNumbering(int numUnits, int numDays, Contract contract);
         abstract protected void BuildNumbering(int numUnits, int numDays, Contract contract, List<DayOff> dayOffRequests, DateTime startDate);
         abstract protected void BuildNumbering(int numUnits, int numDays, Contract contract, List<ShiftOff> shiftOffRequests, Dictionary<string, int> shiftTypesDict, DateTime startDate);
+
 
 
 

@@ -8,17 +8,17 @@ namespace ACONRP.Evaluator
 {
     public class CompleteWeekendsCondition : Condition
     {
-        public CompleteWeekendsCondition(int numUnits, int numDays, Contract contract)
+
+        public CompleteWeekendsCondition(int numUnits, int numDays, Contract contract, int firstSaturday, int numWeekends)
         {
             this.name = "COMPLETE WEEKENDS";
+            this.firstSaturday = firstSaturday;
+            this.numWeekends = numWeekends;
             this.BuildNumbering(numUnits, numDays, contract);
         }
 
         protected override void BuildNumbering(int numUnits, int numDays, Contract contract)
         {
-            int numWeekends = 4;//TODO automatic numWeekends and firstSaturday recognition
-            int firstSaturday = 1;
-
             int begin = firstSaturday * numUnits;
 
             int numDaysInWeekend = 0;
@@ -66,7 +66,7 @@ namespace ACONRP.Evaluator
                 counter += 2;
             }
             // INITIALISE COST OF CONDITION
-            if ((contract.CompleteWeekends.Text) == "1")
+            if ((contract.CompleteWeekends.Text) == "true")
             {
                 
                 min_consecutive = numDaysInWeekend;

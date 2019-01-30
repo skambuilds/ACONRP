@@ -8,16 +8,16 @@ namespace ACONRP.Evaluator
 {
     public class MaxAndMinConsecutiveWorkingWeekendsCondition : Condition
     {
-        public MaxAndMinConsecutiveWorkingWeekendsCondition(int numUnits, int numDays, Contract contract)
+        public MaxAndMinConsecutiveWorkingWeekendsCondition(int numUnits, int numDays, Contract contract, int firstSaturday, int numWeekends)
         {
             this.name = "CONSECUTIVE WORKING WEEKENDS";
+            this.firstSaturday = firstSaturday;
+            this.numWeekends = numWeekends;
             this.BuildNumbering(numUnits, numDays, contract);
         }
 
         protected override void BuildNumbering(int numUnits, int numDays, Contract contract)
         {
-            int numWeekends = 4;//TODO: automatic numWeekends and firstSaturday recognition
-            int firstSaturday = 1;
             int begin = firstSaturday * numUnits;
             if (firstSaturday == 0)
             {
