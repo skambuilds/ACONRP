@@ -54,6 +54,8 @@
     <Compile Include="Evaluator\MaxAndMinConsecutiveWorkingDaysCondition.cs" />
     <Compile Include="Evaluator\MaxAndMinConsecutiveWorkingWeekendsCondition.cs" />
     <Compile Include="Evaluator\MaxAndMinNumAssignments.cs" />
+    <Compile Include="Evaluator\PatternCondition.cs" />
+    <Compile Include="Evaluator\PatternConditionBuilder.cs" />
     <Compile Include="Evaluator\SingleAssignmentPerDay.cs" />
     <Compile Include="Evaluator\RequestedDayOffCondition.cs" />
     <Compile Include="Evaluator\RequestedDayOnCondition.cs" />

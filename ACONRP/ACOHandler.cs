@@ -528,22 +528,24 @@ namespace ACONRP
 
             foreach (var nurse in nurses)
             {
-                var unwantedPatterns = contracts.FirstOrDefault(contract => contract.ID == nurse.ContractID).UnwantedPatterns.Pattern;
-                var unwantedContractPatterns = patterns.Where(pattern => unwantedPatterns.Contains(pattern.ID)).ToList();
+                //var unwantedPatterns = contracts.FirstOrDefault(contract => contract.ID == nurse.ContractID).UnwantedPatterns.Pattern;
+                //var unwantedContractPatterns = patterns.Where(pattern => unwantedPatterns.Contains(pattern.ID)).ToList();
 
-                var unwantedShift = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length == 1)).ToList();
-                var unwantedDays = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length > 1)).ToList();
+                //var unwantedShift = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length == 1)).ToList();
+                //var unwantedDays = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length > 1)).ToList();
 
                 var nurseIndex = nurses.IndexOf(nurse);
-                var costsUnwantedShift = HandleUnwantedShift(unwantedShift, nodes[nurseIndex]);
-                var costsUnwantedDay = HandleUnwantedDays(unwantedDays, nodes[nurseIndex]);
+                //var costsUnwantedShift = HandleUnwantedShift(unwantedShift, nodes[nurseIndex]);
+                //var costsUnwantedDay = HandleUnwantedDays(unwantedDays, nodes[nurseIndex]);
 
                 var costSoftConst = Evaluator.CalculatePenalty(nodes[nurseIndex]);
 
-                for (int i = 0; i < costsUnwantedDay.Count; i++)
+                for (int i = 0; i < nodes[nurseIndex].Count; i++)
                 {
-                    double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i) + costSoftConst.ElementAt(i);
-                    Console.WriteLine($"------------------------>\t COSTO : {costsUnwantedShift.ElementAt(i)} + {costsUnwantedDay.ElementAt(i)} + {costSoftConst.ElementAt(i)} = {cost}");
+                    //double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i) + costSoftConst.ElementAt(i);
+                    //Console.WriteLine($"------------------------>\t COSTO : {costsUnwantedShift.ElementAt(i)} + {costsUnwantedDay.ElementAt(i)} + {costSoftConst.ElementAt(i)} = {cost}");
+                    double cost = costSoftConst.ElementAt(i);
+                    Console.WriteLine($"------------------------>\t COSTO = {cost}");
                     nodes[nurseIndex].ElementAt(i).StaticHeuristicInfo = 1.0 / (1.0 + cost);
                 }
             }
