@@ -18,30 +18,35 @@ namespace ACONRP
             //var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
             var inputData = InputData.GetObjectDataFromFile("Instances/toy2.xml");
             ACOHandler handler = new ACOHandler(inputData);
-            //List<Node>[] nodes = handler.GenerationManager.GetShiftPatterns();
-            List<Node>[] nodes = new List<Node>[20] {
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-                new List<Node>(),
-            };
-            NodeTest(nodes);
+            List<Node>[] nodes = handler.GenerationManager.GetShiftPatterns();
+
+
+            //NodesOrderInverter(nodes);
+
+            //List<Node>[] nodes = new List<Node>[20] {
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //    new List<Node>(),
+            //};
+
+            //NodeTest(nodes);
             //NodeTestToy1(nodes);
 
             List<Edge> edges = new List<Edge>();
@@ -62,9 +67,10 @@ namespace ACONRP
             do
             {
                 Console.Write(".");
-                List<Ant> ants = Ant.GenerateAnts(500, handler.CoverRequirements);
+                List<Ant> ants = Ant.GenerateAnts(20, handler.CoverRequirements);
                 foreach (var ant in ants)
                 {
+                    Console.Write(":");
                     for (int i = 0; i < handler.NurseNumber; i++)
                     {
                         var heuristicInformation = handler.ComputeHeuristicInfo(nodes[i], ant.CoverRequirements); //(statica*dinamica) 
@@ -76,8 +82,11 @@ namespace ACONRP
                         ant.CoverRequirements = heuristicInformation[selectedIndex].Item2;
                     }
 
-                    int antSolutionFitnessValue = handler.ApplySolution(ant.Solution).Item1;
-                    int[,] antSolutionUpdatedCoverReq = handler.ApplySolution(ant.Solution).Item2;
+                    Tuple<int, int, int[,]> antSolutionApplication = handler.ApplySolution(ant.Solution);
+                    int antSolutionFitnessValue = antSolutionApplication.Item1;
+                    int antSolutionOverShift = antSolutionApplication.Item2;
+                    int[,] antSolutionUpdatedCoverReq = antSolutionApplication.Item3;
+
                     //Aggiornamento degli edge
                     handler.ListOfEdgesUpdate(ant.Solution, edges);
 
@@ -88,7 +97,7 @@ namespace ACONRP
                         mainSolution = ant.Solution;
                         mainSolutionFitnessValue = antSolutionFitnessValue;
                         consecutiveNoImprovements = 0;
-                        Console.Write($" {mainSolutionFitnessValue} ");
+                        Console.Write($" {mainSolutionFitnessValue - antSolutionOverShift} + {antSolutionOverShift} ");
                     }
                     else
                     {
@@ -99,7 +108,7 @@ namespace ACONRP
 
                 handler.GlobalPheromoneUpdate(mainSolution, mainSolutionFitnessValue, edges);
 
-            } while (consecutiveNoImprovements < 200);
+            } while (consecutiveNoImprovements < 10);
 
             Console.WriteLine("\nThe ACO Algorithm has produced the following solution: ");
             //mainSolution.ForEach(x => Console.WriteLine($"Nurse {x.NurseId} - Node {x.Index}"));
@@ -107,6 +116,19 @@ namespace ACONRP
             Console.WriteLine($"\nThis solution had a total fitness value of {mainSolutionFitnessValue}");
             Console.ReadKey();
 
+        }
+
+        private static void NodesOrderInverter(List<Node>[] nodes)
+        {
+
+            List<Node>[] localNodes = (List<Node>[])nodes.Clone();
+
+            int i = 0;
+            for (int j = localNodes.Length - 1; j >= 0; j--)
+            {
+                nodes[i] = localNodes[j];
+                i++;
+            }            
         }
 
         //private static void NodeTest(List<Node>[] nodes)

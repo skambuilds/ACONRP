@@ -15,6 +15,10 @@ namespace ACONRP
         public const double PARAM_EPSILON = 0.1;
         public const double PARAM_RHO = 0.1;
         public const double PARAM_LAMBDA = 200.0;
+        /// <summary>
+        /// Over assignment penalty
+        /// </summary>
+        private const double PARAM_GAMMA = 1.5; 
 
         public GenerationManager GenerationManager { get; set; }
         public Evalutador Evaluator { get; set; }
@@ -346,7 +350,8 @@ namespace ACONRP
             int[,] coverReqUpdated = new int[coverRequirements.GetLength(0), coverRequirements.GetLength(1)];
             //Console.WriteLine("Starting cover requirements matrix:\n");
             //PrintCoverRequirements(coverRequirements);
-            int coveredShifts = 0;
+            double coveredShifts = 0;
+            double overAssignment = 0;
             for (int i = 0; i < node.ShiftPattern.GetLength(0); i++)
             {
                 for (int j = 0; j < node.ShiftPattern.GetLength(1); j++)
@@ -358,13 +363,18 @@ namespace ACONRP
                     }
                     else
                     {
-                        coveredShifts += coverRequirements[i, j] - (Math.Abs(coverRequirements[i, j] - uncoverQuantity));
+                        //If an over assignment has been found then the value of coveredShift will be decrease properly
+                        //coveredShifts += coverRequirements[i, j] - (Math.Abs(coverRequirements[i, j] - uncoverQuantity));
+                        overAssignment++;
                     }
                     //coveredShifts += Math.Abs(uncoverQuantity);
                     coverReqUpdated[i, j] = (uncoverQuantity > 0) ? uncoverQuantity : 0;
                 }
             }
-            coveredShifts = (coveredShifts < 0) ? 1 : coveredShifts;
+            //If the number of covered shifts is negative then some over assignments have been identified, therefore the total value can't be more then 0.
+            double coefOverAssignment = overAssignment * PARAM_GAMMA;
+            coveredShifts -= coefOverAssignment;
+            coveredShifts = (coveredShifts < 0) ? 0 : coveredShifts;
             //Console.WriteLine("Updated cover requirements matrix:\n");
             //PrintCoverRequirements(coverReqUpdated);
             return new Tuple<double, int[,]>(node.StaticHeuristicInfo * coveredShifts, coverReqUpdated);
@@ -388,7 +398,7 @@ namespace ACONRP
         /// </summary>
         /// <param name="mainSolution">A list of nodes that rappresents a complete solution</param>
         /// <returns></returns>
-        public Tuple<int, int[,]> ApplySolution(List<Node> mainSolution)
+        public Tuple<int, int, int[,]> ApplySolution(List<Node> mainSolution)
         {
             int objectiveFunctionValue = 0;
             int[,] coverRequirements = (int[,])CoverRequirements.Clone(); ;
@@ -445,7 +455,7 @@ namespace ACONRP
             //Console.WriteLine("Updated cover requirements matrix:\n");
             //PrintCoverRequirements(coverRequirements);
 
-            return new Tuple<int, int[,]>(objectiveFunctionValue + totalOvershift, coverRequirements);
+            return new Tuple<int, int, int[,]>(objectiveFunctionValue + totalOvershift, totalOvershift, coverRequirements);
         }
 
         /// <summary>

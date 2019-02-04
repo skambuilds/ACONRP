@@ -41,7 +41,7 @@ namespace ACONRP
         /// <summary>
         /// Maximum number of shift patterns for each possible assignment value
         /// </summary>
-        private const decimal maximumLimit = 5000;
+        private const decimal maximumLimit = 2000;
         /// <summary>
         /// Indicates if the single assignment per day option is active
         /// </summary>
@@ -53,7 +53,7 @@ namespace ACONRP
 
         private const bool regenerate = false;
         
-        private const int assntViolation = 1; //put 0 to disable
+        private const int assntViolation = 6; //put 0 to disable
         private const int maxConsViolation = 1;
         private const int violationEvent = 1; //put 1 to disable
 
