@@ -538,22 +538,24 @@ namespace ACONRP
 
             foreach (var nurse in nurses)
             {
-                var unwantedPatterns = contracts.FirstOrDefault(contract => contract.ID == nurse.ContractID).UnwantedPatterns.Pattern;
-                var unwantedContractPatterns = patterns.Where(pattern => unwantedPatterns.Contains(pattern.ID)).ToList();
+                //var unwantedPatterns = contracts.FirstOrDefault(contract => contract.ID == nurse.ContractID).UnwantedPatterns.Pattern;
+                //var unwantedContractPatterns = patterns.Where(pattern => unwantedPatterns.Contains(pattern.ID)).ToList();
 
-                var unwantedShift = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length == 1)).ToList();
-                var unwantedDays = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length > 1)).ToList();
+                //var unwantedShift = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length == 1)).ToList();
+                //var unwantedDays = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length > 1)).ToList();
 
                 var nurseIndex = nurses.IndexOf(nurse);
-                var costsUnwantedShift = HandleUnwantedShift(unwantedShift, nodes[nurseIndex]);
-                var costsUnwantedDay = HandleUnwantedDays(unwantedDays, nodes[nurseIndex]);
+                //var costsUnwantedShift = HandleUnwantedShift(unwantedShift, nodes[nurseIndex]);
+                //var costsUnwantedDay = HandleUnwantedDays(unwantedDays, nodes[nurseIndex]);
 
                 var costSoftConst = Evaluator.CalculatePenalty(nodes[nurseIndex]);
 
-                for (int i = 0; i < costsUnwantedDay.Count; i++)
+                for (int i = 0; i < nodes[nurseIndex].Count; i++)
                 {
-                    double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i) + costSoftConst.ElementAt(i);
-                    Console.WriteLine($"------------------------>\t COSTO : {costsUnwantedShift.ElementAt(i)} + {costsUnwantedDay.ElementAt(i)} + {costSoftConst.ElementAt(i)} = {cost}");
+                    //double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i) + costSoftConst.ElementAt(i);
+                    //Console.WriteLine($"------------------------>\t COSTO : {costsUnwantedShift.ElementAt(i)} + {costsUnwantedDay.ElementAt(i)} + {costSoftConst.ElementAt(i)} = {cost}");
+                    double cost = costSoftConst.ElementAt(i);
+                    Console.WriteLine($"------------------------>\t COSTO = {cost}");
                     nodes[nurseIndex].ElementAt(i).StaticHeuristicInfo = 1.0 / (1.0 + cost);
                 }
             }
@@ -606,21 +608,29 @@ namespace ACONRP
             do
             {
                 var confirmedPattern = 0;
+                List<List<PatternEntry>> anyGroups = ExtractContiguousAnyPatterns(patternEntries);
                 foreach (var patternEntry in patternEntries)
                 {
                     int? indexDay = DayIndex[patternEntry.Day].Where(x => x >= startWeekIndex && x <= endWeekIndex).FirstOrDefault();
                     if (!indexDay.HasValue)
                         break;
 
-                    if (patternEntry.ShiftType == "Any" && !Utils.GetColumn<bool>(nursePattern, indexDay.Value).Contains(true))
-                        break;
+                    if (patternEntry.ShiftType == "Any") 
+                    {
+                        if (Utils.GetColumn<bool>(nursePattern, indexDay.Value).Contains(true)) //at least one any pattern per group have assigned
+                        {
+                            var belongingGroup = anyGroups.FirstOrDefault(x => x.Contains(patternEntry));
+                            if (belongingGroup != null && anyGroups.Contains(belongingGroup))
+                                anyGroups.Remove(belongingGroup);
+                        }
+                    }
 
                     if (patternEntry.ShiftType == "None" && Utils.GetColumn<bool>(nursePattern, indexDay.Value).Contains(true))
                         break;
 
                     confirmedPattern++;
                 }
-                if (confirmedPattern == patternEntries.Count)
+                if (confirmedPattern == patternEntries.Count && anyGroups.Count == 0)
                     patternOccurences++;
 
                 startWeekDate = endWeekDate.AddDays(1);
@@ -630,6 +640,36 @@ namespace ACONRP
             } while (endWeekDate <= EndDate);
 
             return patternOccurences;
+        }
+
+        /// <summary>
+        /// Returns a list of list of contiguous entry pattern of shift type any
+        /// </summary>
+        /// <param name="patternEntries"></param>
+        /// <returns></returns>
+        private List<List<PatternEntry>> ExtractContiguousAnyPatterns(List<PatternEntry> patternEntries)
+        {
+            List<List<PatternEntry>> groups = new List<List<PatternEntry>>();
+            List<PatternEntry> newList = new List<PatternEntry>();
+
+            foreach (var patternEntry in patternEntries)
+            {
+                if (patternEntry.ShiftType == "Any")
+                    newList.Add(patternEntry);
+                else if(newList.Count >0)
+                {
+                    groups.Add(newList);
+                    newList = new List<PatternEntry>();
+                }
+
+            }
+            if (newList.Count > 0)
+            {
+                groups.Add(newList);
+                newList = new List<PatternEntry>();
+            }
+
+            return groups.Where(g=>g.Count()>1).ToList(); //the list with only one element (isolated any) are removed from the list
         }
 
         private int GetDaysTo(DateTime startDate, string day)

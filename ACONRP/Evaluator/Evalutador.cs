@@ -65,6 +65,7 @@ namespace ACONRP.Evaluator
         {
             int contractId = Convert.ToInt16(inputDataLocal.Employees.Employee[employeeId].ContractID);
             Contract contract = inputDataLocal.Contracts.Contract[contractId];
+            var patterns = inputDataLocal.Patterns.Pattern;
             List<DayOff> dayOffRequests = inputDataLocal.DayOffRequests.DayOff.Where(day => day.EmployeeID == employeeId.ToString()).ToList();
             List<ShiftOff> shiftOffRequests = inputDataLocal.ShiftOffRequests.ShiftOff.Where(shift => shift.EmployeeID == employeeId.ToString()).ToList();
             DateTime startDate = Convert.ToDateTime(inputDataLocal.StartDate);
@@ -97,17 +98,18 @@ namespace ACONRP.Evaluator
             
             c = new RequestedShiftOffCondition(numUnits, numDays, contract, shiftOffRequests, shiftTypesDict, startDate);
             conditions.Add(c);
-            
+
+            // ADD UNWANTED PATTERNS
+            List<Condition> conds = PatternConditionBuilder.BuildPatternCondition(numUnits, numDays, contract, patterns, shiftTypesDict, numWeekends);
+            conditions.AddRange(conds);
+
+            //buildSTSTST_Any/buildFWW_Fixed
 
             //c = new RequestedShiftOnCondition(numUnits, numDays, contract);
             //conditions.Add(c);
 
             //c = new AlternativeSkillCondition(numUnits, numDays, contract);
             //conditions.Add(c);
-
-            // ADD UNWANTED PATTERNS
-            //ArrayList<Condition> conds = PatternConditionBuilder.buildPatternCondition(getEmployee(), getEmployee().getSchedulingPeriod());
-            //conditions.addAll(conds);
 
             // ADD UNWANTED SHIFTS
 
@@ -119,7 +121,7 @@ namespace ACONRP.Evaluator
 
         public List<int> CalculatePenalty(List<Node> nodesToEvaluate)
         {
-            int cost = 0;
+            //int cost = 0;
             List<int> costs = new List<int>();
             scheduleEvaluator = new ScheduleEvaluator(inputDataLocal);
             if (nodesToEvaluate == null) throw new IndexOutOfRangeException();
