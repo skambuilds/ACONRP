@@ -11,7 +11,8 @@ namespace ACONRP
     {
         public int NurseId { get; set; }
         public int Index { get; set; }
-        public bool[,] ShiftPattern { get; set; }
+        public bool[,] ShiftPatternMatrix { get; set; }
+        public bool[] ShiftPatternArray { get; set; }
         public double StaticHeuristicInfo { get; set; }
         public int Penalty { get; set; } //Soft Constraint violation penalty
     }

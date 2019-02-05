@@ -150,12 +150,14 @@ namespace ACONRP
                     System.IO.StreamReader file = new System.IO.StreamReader($@"{GetShiftsFileName(i)}");
                     while ((line = file.ReadLine()) != null)
                     {
-                        char[] shiftPattern = line.ToArray();
-                        bool[,] shiftPatternMatrix = ArrayToMatrixConverter(shiftPattern);
+                        char[] shiftPatternChar = line.ToArray();
+                        bool[] shiftPatternBool = ShiftPatternConverter(shiftPatternChar);
+                        bool[,] shiftPatternMatrix = ArrayToMatrixConverter(shiftPatternBool);
                         Node node = new Node();
                         node.Index = lineCounter;
                         node.NurseId = i;
-                        node.ShiftPattern = shiftPatternMatrix;
+                        node.ShiftPatternMatrix = shiftPatternMatrix;
+                        node.ShiftPatternArray = shiftPatternBool;
                         node.StaticHeuristicInfo = 0.00;
                         nodesSet.Add(node);
                         lineCounter++;
@@ -173,6 +175,21 @@ namespace ACONRP
             Console.WriteLine($"The shift patterns have been loaded correctly from .txt files");
             return nodesPerNurse;
         }
+        /// <summary>
+        /// Converts a shift pattern array in character form into a shift pattern array in boolean form
+        /// </summary>
+        /// <param name="shiftPatternChar">Shift pattern character array</param>
+        /// <returns>Shift pattern boolean array</returns>
+        private static bool[] ShiftPatternConverter(char[] shiftPatternChar)
+        {
+            bool[] shiftPatternBool = new bool[shiftPatternChar.Length];
+            for (int j = 0; j < shiftPatternChar.Length; j++)
+            {
+                shiftPatternBool[j] = ((shiftPatternChar[j].Equals('1')) ? true : false);
+            }
+            return shiftPatternBool;
+        }
+
         /// <summary>
         /// Generic input data initializer procedure via xml file reading
         /// </summary>
@@ -298,7 +315,8 @@ namespace ACONRP
 
                             node.Index = nodeIndex;
                             node.NurseId = nurseId;
-                            node.ShiftPattern = shiftPatternMatrix;
+                            node.ShiftPatternMatrix = shiftPatternMatrix;
+                            node.ShiftPatternArray = shiftPattern;
                             node.StaticHeuristicInfo = 0.00;
                             nodesSet.Add(node);
                             nodeIndex++;
@@ -490,7 +508,7 @@ namespace ACONRP
                 foreach (Node node in nodesPerNurse[i])
                 {
                     Console.Write($"Id nodo: {node.Index}\n");
-                    PrintSingleShiftPattern(node.ShiftPattern, j);
+                    PrintSingleShiftPattern(node.ShiftPatternMatrix, j);
                     j++;
                 }
             }
@@ -502,7 +520,7 @@ namespace ACONRP
                 foreach (Node node in solutionNodes)
                 {
                     Console.Write($"\nNurse {node.NurseId} - ");
-                    PrintSingleShiftPattern(node.ShiftPattern, node.Index);                    
+                    PrintSingleShiftPattern(node.ShiftPatternMatrix, node.Index);                    
                 }
             
         }
@@ -812,7 +830,7 @@ namespace ACONRP
         {
             foreach (Node node in nodesSet)
             {
-                if (PatternsAreEqual(node.ShiftPattern, pattern))
+                if (PatternsAreEqual(node.ShiftPatternMatrix, pattern))
                 {
                     return true;
                 }

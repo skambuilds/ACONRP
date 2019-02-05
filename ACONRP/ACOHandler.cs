@@ -352,11 +352,11 @@ namespace ACONRP
             //PrintCoverRequirements(coverRequirements);
             double coveredShifts = 0;
             double overAssignment = 0;
-            for (int i = 0; i < node.ShiftPattern.GetLength(0); i++)
+            for (int i = 0; i < node.ShiftPatternMatrix.GetLength(0); i++)
             {
-                for (int j = 0; j < node.ShiftPattern.GetLength(1); j++)
+                for (int j = 0; j < node.ShiftPatternMatrix.GetLength(1); j++)
                 {
-                    int uncoverQuantity = coverRequirements[i, j] - ((node.ShiftPattern[i, j]) ? 1 : 0);
+                    int uncoverQuantity = coverRequirements[i, j] - ((node.ShiftPatternMatrix[i, j]) ? 1 : 0);
                     if (uncoverQuantity >= 0)
                     {
                         coveredShifts += coverRequirements[i, j] - uncoverQuantity;
@@ -421,11 +421,11 @@ namespace ACONRP
             //PrintCoverRequirements(coverRequirements);
             foreach (Node node in mainSolution)
             {
-                for (int i = 0; i < node.ShiftPattern.GetLength(0); i++)
+                for (int i = 0; i < node.ShiftPatternMatrix.GetLength(0); i++)
                 {
-                    for (int j = 0; j < node.ShiftPattern.GetLength(1); j++)
+                    for (int j = 0; j < node.ShiftPatternMatrix.GetLength(1); j++)
                     {
-                        int uncoveredShifts = coverRequirements[i, j] - ((node.ShiftPattern[i, j]) ? 1 : 0);
+                        int uncoveredShifts = coverRequirements[i, j] - ((node.ShiftPatternMatrix[i, j]) ? 1 : 0);
                         totalOvershift += (uncoveredShifts < 0) ? 1 : 0;
                         coverRequirements[i, j] = (uncoveredShifts < 0) ? 0 : uncoveredShifts;
                     }
@@ -511,7 +511,6 @@ namespace ACONRP
 
             InitiazeCoverRequirements();
         }
-
         /// <summary>
         /// Initializes the matrix of cover requirements using InputData
         /// </summary>
@@ -573,7 +572,7 @@ namespace ACONRP
                 {
                     var weight = double.Parse(pattern.Weight);
 
-                    var occurences = CheckDays(pattern.PatternEntries.PatternEntry, node.ShiftPattern);
+                    var occurences = CheckDays(pattern.PatternEntries.PatternEntry, node.ShiftPatternMatrix);
                     totalCost += weight * occurences;
                 }
                 costs.Add(totalCost);
@@ -716,7 +715,7 @@ namespace ACONRP
                 foreach (var pattern in unwantedShift)
                 {
                     UnwantedShift shift = new UnwantedShift(pattern, ShiftPatternIndex);
-                    totalCost += shift.Check(node.ShiftPattern);
+                    totalCost += shift.Check(node.ShiftPatternMatrix);
                 }
 
                 costs.Add(totalCost);

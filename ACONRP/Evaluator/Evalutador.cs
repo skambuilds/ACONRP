@@ -25,7 +25,8 @@ namespace ACONRP.Evaluator
         {
             //Data Initialization
             inputDataLocal = inputData;
-            var orderedShifts = inputDataLocal.ShiftTypes.Shift.OrderBy(x => DateTime.Parse(x.StartTime)).ThenBy(x => DateTime.Parse(x.EndTime)).ToList();
+            //var orderedShifts = inputDataLocal.ShiftTypes.Shift.OrderBy(x => DateTime.Parse(x.StartTime)).ThenBy(x => DateTime.Parse(x.EndTime)).ToList();
+            var orderedShifts = inputDataLocal.ShiftTypes.Shift.ToList();
             orderedShifts.ForEach(shift => shiftTypesDict.Add(shift.ID, orderedShifts.IndexOf(shift)));
             numUnits = inputDataLocal.ShiftTypes.Shift.Count;
             DateTime startDate = Convert.ToDateTime(inputDataLocal.StartDate);
@@ -166,9 +167,9 @@ namespace ACONRP.Evaluator
         {
             {
                 //Swap from Matrix data structure to simple array data structure
-                bool[] rooster = new bool[nodeToEvaluate.ShiftPattern.GetLength(0)* nodeToEvaluate.ShiftPattern.GetLength(1)];
+                bool[] rooster = new bool[nodeToEvaluate.ShiftPatternMatrix.GetLength(0)* nodeToEvaluate.ShiftPatternMatrix.GetLength(1)];
                 int k = 0;
-                bool[,] tempMatrix = nodeToEvaluate.ShiftPattern;
+                bool[,] tempMatrix = nodeToEvaluate.ShiftPatternMatrix;
                 for (int i = 0; i != tempMatrix.GetLength(1); i++)
                 {
                     for (int y = 0; y != tempMatrix.GetLength(0); y++)
@@ -184,7 +185,7 @@ namespace ACONRP.Evaluator
                 {
                     Console.Write((element) ? "1" : "0");
                     if (element) count++;
-                    if (j == nodeToEvaluate.ShiftPattern.GetLength(0))
+                    if (j == nodeToEvaluate.ShiftPatternMatrix.GetLength(0))
                     {
                         Console.Write("|");
                         j = 0;

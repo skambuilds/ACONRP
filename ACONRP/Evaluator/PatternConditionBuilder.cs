@@ -177,11 +177,13 @@ namespace ACONRP.Evaluator
                 for (int j = 0; j != CalculateNrOfFills(nDays - w, nbNumbs); j++)
                 {
                     int dayPos = w + (j * nbNumbs);
-                    if (firstSt == 1)
-                    {
-                        firstSt = 2;
-                    }
-                    else if (firstSt == 2) firstSt = 1;
+
+                    //if (firstSt == 1)
+                    //{
+                    //    firstSt = 2;
+                    //}
+                    //else if (firstSt == 2) firstSt = 1;
+
                     int pos = (dayPos * numSt) + firstSt;//firstSt viene conteggiato male
 
                     c.GetNumbering()[pos] = counter;
@@ -191,11 +193,13 @@ namespace ACONRP.Evaluator
                         int index = -1;
                         PatternEntry pe = p.PatternEntries.PatternEntry[i];
                         bool resulto = shiftTypesDict.TryGetValue(pe.ShiftType, out index);
-                        if (index == 1)
-                        {
-                            index = 2;
-                        }
-                        else if (index == 2) index = 1;
+
+                        //if (index == 1)
+                        //{
+                        //    index = 2;
+                        //}
+                        //else if (index == 2) index = 1;
+  
                         pos = ((dayPos + i) * numSt) + index;
                         c.GetNumbering()[pos] = ++counter;
 
@@ -293,7 +297,7 @@ namespace ACONRP.Evaluator
                 // check if last index is still in planning period
                 int dayPos = dayPosFirst + (j * 7);
 
-                if (dayPos >= numWeekends) continue;
+                if (dayPos >= numDays) continue;
 
                 Condition c = new PatternCondition(numUnits, numDays, contract);
                 c.last_nr_history = 0;

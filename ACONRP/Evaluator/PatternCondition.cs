@@ -18,19 +18,22 @@ namespace ACONRP.Evaluator
             //int numSt = numUnits;
             //int numDays = this.getEmployee().getSchedulingPeriod().nrOfDaysInPeriod;
             //int numUnits = numSt * numDays;
-            this.numbering = new int[numUnits * numDays];
 
-            for (int i = 0; i != (numUnits * numDays); i++)
+            int numTimeUnits = numUnits * numDays;
+            this.numbering = new int[numTimeUnits];
+
+            for (int i = 0; i != numTimeUnits; i++)
             {
                 this.numbering[i] = Condition.Undefined;
             }
+            
+            max_pert_nr = new int[numTimeUnits];
+            max_pert_nr_nonevent = new int[numTimeUnits];
+            min_pert_nr = new int[numTimeUnits];
+            min_pert_nr_nonevent = new int[numTimeUnits];
+            cost_max_pert_nr = new int[numTimeUnits];
+            cost_min_pert_nr = new int[numTimeUnits];
 
-            max_pert_nr = new int[numUnits * numDays];
-            max_pert_nr_nonevent = new int[numUnits * numDays];
-            min_pert_nr = new int[numUnits * numDays];
-            min_pert_nr_nonevent = new int[numUnits * numDays];
-            cost_max_pert_nr = new int[numUnits * numDays];
-            cost_min_pert_nr = new int[numUnits * numDays];
 
             this.ENABLED = true;
         }
