@@ -266,8 +266,8 @@ namespace ACONRP
                         Index = 0, NurseId = 0, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { false,    true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
-                            { true,   false,  false,  true,   false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  true,   false,  false,  false },
-                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true }
+                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true },
+                            { true,   false,  false,  true,   false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  true,   false,  false,  false }
                         }
                     }
                 };
@@ -279,8 +279,8 @@ namespace ACONRP
                         Index = 0, NurseId = 1, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { true, false,  false,  false,  false,  false,  true,   false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  true,   false,  true,   false,  false,  false,  false,  false,  false,  false,  false },
-                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false },
-                            { false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
+                            { false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
+                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false }
                         }
                     }
                 };
@@ -292,8 +292,8 @@ namespace ACONRP
                         Index = 0, NurseId = 2, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  true,   false,  true,   false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  true,   false,  false,  false },
-                            { false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false },
-                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
+                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
+                            { false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false }
                         }
                     }
                 };
@@ -305,8 +305,8 @@ namespace ACONRP
                         Index = 0, NurseId = 3, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  true,   true,   false,  false },
-                            { false,  false,  false,  true,   true,   false,  false,  true,   false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
-                            { false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
+                            { false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
+                            { false,  false,  false,  true,   true,   false,  false,  true,   false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
                         }
                     }
                 };
@@ -317,8 +317,8 @@ namespace ACONRP
                         Index = 0, NurseId = 4, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { false,    false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  true,   false,  false,  false,  false,  false },
-                            { true,   false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  true },
-                            { false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
+                            { false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
+                            { true,   false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  true }
                         }
                     }
                 };
@@ -329,8 +329,8 @@ namespace ACONRP
                         Index = 0, NurseId = 5, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { true, false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  true },
-                            { false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
-                            { true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
+                            { true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
+                            { false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
                         }
                     }
                 };
@@ -341,8 +341,8 @@ namespace ACONRP
                         Index = 0, NurseId = 6, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { true, false,  false,  false,  false,  false,  true,   true,   false,  false,  true,   false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  true,   false,  false,  false,  true },
-                            {  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
-                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false }
+                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false },
+                            {  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
                          }
                     }
                 };
@@ -353,8 +353,8 @@ namespace ACONRP
                         Index = 0, NurseId = 7, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { false,    true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true },
-                            { true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false },
-                            { false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  true,   false,  false,  false,  false }
+                            { false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  true,   false,  false,  false,  false },
+                            { true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false }
                         }
                     }
                 };
@@ -365,8 +365,8 @@ namespace ACONRP
                         Index = 0, NurseId = 8, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { false,    false,  false,  false,  true,   false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
-                            { false,  false,  false,  false,  false,  true,   false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  true },
-                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,  false }
+                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,  false },
+                            { false,  false,  false,  false,  false,  true,   false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  true }
                         }
                     }
                 };
@@ -379,6 +379,7 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  true,   false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  true,   true,   false,  false,  false,  true }, 
                             { false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
+
 
                         }
                     }
@@ -393,6 +394,7 @@ namespace ACONRP
                             { false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  true,   true,   false,  false },
                             { false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
 
+
                         }
                     }
                 };
@@ -405,6 +407,7 @@ namespace ACONRP
                             { false,    false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false }
+
 
                         }
                     }
@@ -419,6 +422,7 @@ namespace ACONRP
                             { false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false }
 
+
                         }
                     }
                 };
@@ -431,6 +435,7 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   true,   false,  false,  false,  true,   true,   false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
+
 
                         }
                     }
@@ -445,6 +450,7 @@ namespace ACONRP
                             { false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false }
 
+
                         }
                     }
                 };
@@ -457,6 +463,7 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
+
 
                         }
                     }
@@ -471,6 +478,7 @@ namespace ACONRP
                             { false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
 
+
                         }
                     }
                 };
@@ -483,6 +491,7 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  true,   true,   true,   false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false }
+
 
                         }
                     }
@@ -497,6 +506,7 @@ namespace ACONRP
                             { false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
 
+
                         }
                     }
                 };
@@ -509,6 +519,7 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  true,   false,  false,  false,  false,  false,  false }
+
 
                         }
                     }
