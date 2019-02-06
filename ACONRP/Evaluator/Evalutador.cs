@@ -122,23 +122,24 @@ namespace ACONRP.Evaluator
 
         public List<int> CalculatePenalty(List<Node> nodesToEvaluate)
         {
-            //int cost = 0;
+            //int cost = 0;            
             List<int> costs = new List<int>();
             scheduleEvaluator = new ScheduleEvaluator(inputDataLocal);
-            if (nodesToEvaluate == null) throw new IndexOutOfRangeException();
+            if (nodesToEvaluate == null) throw new NullReferenceException();
             conditions.Clear();
             BuildConditionsList(nodesToEvaluate[0].NurseId);
             int median = 0;
-            foreach (Node nodeToEvaluate in nodesToEvaluate)
-            {
-                int temp = 0;
-                temp = scheduleEvaluator.GetCost(nodeToEvaluate, conditions, violations);
-                costs.Add(temp);
-                PrintSingleShiftPattern(nodeToEvaluate);
-                PrintViolationOfNode(nodeToEvaluate.NurseId, nodeToEvaluate.Index);
+            foreach (Node node in nodesToEvaluate)
+            {                
+                int nodeCost = 0;
+                nodeCost = scheduleEvaluator.GetCost(node, conditions);
+                node.Cost = nodeCost;
+                node.StaticHeuristicInfo = 1.0 / (1.0 + nodeCost);
+                
+                costs.Add(nodeCost);
                 median++;
+                //PrintSingleShiftPattern(nodeToEvaluate);
             }
-
 
             //DEBUG: Prints total cost of soft constraint violation per node.
             //foreach (Violation viol in violations)
@@ -150,17 +151,30 @@ namespace ACONRP.Evaluator
             //Console.WriteLine("Soft Constraint ShiftPatterns Violation for nurse: " + nodesToEvaluate[0].NurseId + " = " + cost + " , Average Cost = " + (cost/median));
             return costs;
         }
-
-        public void PrintViolationOfNode(int nurseID, int nodeIndex)
+        public void CalculateSolutionPenalty(List<Node> nodesToEvaluate)
         {
+            bool enableViolTracking = true;
+            if (nodesToEvaluate == null) throw new NullReferenceException();
+            scheduleEvaluator = new ScheduleEvaluator(inputDataLocal);
+            foreach (Node node in nodesToEvaluate)
+            {
+                conditions.Clear();
+                BuildConditionsList(node.NurseId);            
+                node.Violations = new List<string>();
+                int nodeCost = scheduleEvaluator.GetCost(node, conditions, enableViolTracking);                              
+            }            
+        }
+
+        public List<string> GetNodeViolations(int nurseID, int nodeIndex)
+        {
+            List<string> nodeViolations = new List<string>();
             List<Violation> violationOfNode = violations.Where(gigi => gigi.NodeNurseId == nurseID && gigi.NodeIndex == nodeIndex).ToList();
             foreach (Violation viol in violationOfNode)
             {
-                string g = viol.ToString();
-                Console.WriteLine(g);
+                string strViol = viol.ToString();
+                nodeViolations.Add(strViol);
             }
-
-            //Console.WriteLine("Soft Constraint ShiftPatterns Violation for nurse: " + nodesToEvaluate[0].NurseId + " = " + cost + " , Average Cost = " + (cost / median));
+            return nodeViolations;   
         }
 
         private void PrintSingleShiftPattern(Node nodeToEvaluate)

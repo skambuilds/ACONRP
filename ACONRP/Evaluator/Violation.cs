@@ -59,7 +59,7 @@ namespace ACONRP.Evaluator
                     break;
             }
 
-            s = s + ", Node Nurse ID = " + NodeNurseId + " , Node Index = " + NodeIndex + " , Violation in excess = " + Value + " , pos = " + ViolationIndex + ", cost = " + Cost;
+            s = s + ", Node Nurse ID = " + NodeNurseId + " , Node Index = " + NodeIndex + " , Violation in excess = " + Value + " , pos = " + ViolationIndex + ", cost = " + Cost;            
 
             return s;
         }

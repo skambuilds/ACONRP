@@ -13,7 +13,7 @@ namespace ACONRP
         /// <summary>
         /// Number of nurses
         /// </summary>
-        private int numberOfNurses { get; set; }        
+        private int numberOfNurses { get; set; }
         /// <summary>
         /// Number of shift types
         /// </summary>
@@ -52,7 +52,7 @@ namespace ACONRP
         private bool circularTimePeriod = false;
 
         private const bool regenerate = false;
-        
+
         private const int assntViolation = 6; //put 0 to disable
         private const int maxConsViolation = 1;
         private const int violationEvent = 1; //put 1 to disable
@@ -71,7 +71,7 @@ namespace ACONRP
             GenericInputDataInitializer(inputData);
         }
         public List<Node>[] GetShiftPatterns()
-        {            
+        {
             if (regenerate == false && CheckShiftPatternFilesExistance())
                 return PatternLoadingMethod();
             else
@@ -237,14 +237,14 @@ namespace ACONRP
             //List of removed indexes which have been randomly extracted
             List<int> actualRemovedElements = new List<int>();
             //Counter of created nodes used as node index
-            int nodeIndex = 0;           
+            int nodeIndex = 0;
 
             CheckAndCreateDirectory();
             using (System.IO.StreamWriter file = new System.IO.StreamWriter($@"{GetShiftsFileName(nurseId)}", false))
             {
                 bool dashFlag = true;
                 bool backFlag = true;
-                
+
                 //file.WriteLine($"NurseId: {nurseId}");
                 int minLimit;
                 int maxLimit;
@@ -343,7 +343,7 @@ namespace ACONRP
                         if (j > 0 && j == violationNum)
                         {
                             enableViolation = true;
-                        }                        
+                        }
                     }
                     while (alreadyExistCounter < iterationLimit && j < iterationLimit);
                     Console.Write("\b- ");
@@ -430,6 +430,21 @@ namespace ACONRP
             return shiftPatternMatrix;
         }
         /// <summary>
+        /// Print shift patterns of the solution
+        /// </summary>
+        /// <param name="solutionNodes">List of solution nodes</param>
+        public void PrintSolutionNodes(List<Node> solutionNodes)
+        {
+            foreach (Node node in solutionNodes)
+            {
+                Console.Write($"\nNurse {node.NurseId} - ");
+                PrintSingleShiftPattern(node.ShiftPatternMatrix, node.Index);
+                Console.Write($"Violations:\n");
+                foreach (string viol in node.Violations) Console.Write($"{viol}\n");
+                Console.Write($"Total cost: {node.Cost}\n");
+            }
+        }
+        /// <summary>
         /// Shift pattern print procedure
         /// </summary>
         /// <param name="shiftPattern">Boolean array which contains the randomly generated shift pattern</param>
@@ -471,7 +486,7 @@ namespace ACONRP
                 for (int j = 0; j < numOfDays; j++)
                 {
                     if (shiftPatternMatrix[i, j]) count++;
-                    Console.Write((shiftPatternMatrix[i, j]) ? "\t1" : "\t0");
+                    Console.Write((shiftPatternMatrix[i, j]) ? "1\t" : "0\t");
                 }
                 Console.Write("\n");
             }
@@ -485,12 +500,12 @@ namespace ACONRP
             DateTime startDay = Convert.ToDateTime(InputData.StartDate);
             for (int i = 0; i < numOfDays; i++)
             {
-                Console.Write($"\t{i}");
+                Console.Write($"{i}\t");
             }
             Console.Write($"\n\n");
             for (int j = 0; j < numOfDays; j++)
             {
-                Console.Write($"\t{startDay.DayOfWeek.ToString().First()}");
+                Console.Write($"{startDay.DayOfWeek.ToString().First()}\t");
                 startDay = startDay.AddDays(1);
             }
             Console.Write($"\n");
@@ -512,17 +527,6 @@ namespace ACONRP
                     j++;
                 }
             }
-        }
-       
-        public void PrintSolutionNodes(List<Node> solutionNodes)
-        {
-            int j = 0;
-                foreach (Node node in solutionNodes)
-                {
-                    Console.Write($"\nNurse {node.NurseId} - ");
-                    PrintSingleShiftPattern(node.ShiftPatternMatrix, node.Index);                    
-                }
-            
         }
         /// <summary>
         /// Add to a list procedure

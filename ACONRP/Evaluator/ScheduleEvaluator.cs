@@ -72,7 +72,7 @@ namespace ACONRP.Evaluator
 
 
         //Intermediate Evaluation
-        public void IntermediateEvaluation(Node nodeToEvaluate, List<Condition> conditions, List<Violation> violations)
+        public void IntermediateEvaluation(Node nodeToEvaluate, List<Condition> conditions, bool trackViolations)
         {
             //Swap from Matrix data structure to simple array data structure
             bool[] rooster = new bool[numTimeUnits];
@@ -108,7 +108,8 @@ namespace ACONRP.Evaluator
                                         int pen = (cost * val);
                                         curCondition.penalty_min_consecutive += pen;
                                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_CONSECUTIVE", val, curCondition, last_nr_pos[iConditions], pen);
-                                        violations.Add(violation);
+                                        if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                                        //trackViolations.Add(violation);
                                         int day = iRooster / nrShiftTypes;
                                         constraintViolationsOnDay[day] += pen;
                                         penalty += pen;
@@ -124,7 +125,8 @@ namespace ACONRP.Evaluator
                                         curCondition.penalty_max_consecutive += pen;
                                         // create and add violation
                                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_CONSECUTIVE", val, curCondition, last_nr_pos[iConditions], pen);
-                                        violations.Add(violation);
+                                        if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                                        //trackViolations.Add(violation);
                                         int day = iRooster / nrShiftTypes;
                                         this.constraintViolationsOnDay[day] += pen;
                                         this.penalty += pen;
@@ -140,7 +142,8 @@ namespace ACONRP.Evaluator
                                         curCondition.penalty_min_between += pen;
                                         // create and add violation
                                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_BETWEEN", val, curCondition, last_nr_pos[iConditions], pen);
-                                        violations.Add(violation);
+                                        if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                                        //trackViolations.Add(violation);
                                         int day = iRooster / nrShiftTypes;
                                         this.constraintViolationsOnDay[day] += pen;
                                         this.penalty += pen;
@@ -154,9 +157,9 @@ namespace ACONRP.Evaluator
                                         int val = (nr - last_nr[iConditions] - 1) - curCondition.max_between;
                                         int pen = (cost * val);
                                         curCondition.penalty_max_between += pen;
-                                        Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_BETWEEN", val, curCondition, iRooster, pen); 
-                                        //Violation v = new Violation(ConstraintType.MAX_BETWEEN, val, curCondition, last_nr_pos[iConditions], this.getSchedule(), pen);
-                                        violations.Add(violation);
+                                        Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_BETWEEN", val, curCondition, iRooster, pen);
+                                        if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                                        //trackViolations.Add(violation);
                                         int day = iRooster / nrShiftTypes;
                                         this.constraintViolationsOnDay[day] += pen;
                                         this.penalty += pen;
@@ -189,7 +192,7 @@ namespace ACONRP.Evaluator
 
 
         //Final Evaluation
-        public void FinalEvaluation(Node nodeToEvaluate, List<Condition> conditions, List<Violation> violations)
+        public void FinalEvaluation(Node nodeToEvaluate, List<Condition> conditions, bool trackViolations)
         {
             for (int iConditions = 0; iConditions != numberOfConditions; iConditions++)
             {
@@ -205,7 +208,8 @@ namespace ACONRP.Evaluator
                         curCondition.penalty_max_total += pen;
                         // create and add violation
                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_TOTAL", val, curCondition, lastPosition, pen);
-                        violations.Add(violation);
+                        if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                        //violations.Add(violation);
                         int day = nrOfDaysInPeriod - 1;//?same value every time?                                 
                         this.constraintViolationsOnDay[day] += pen;
                         this.penalty += pen;
@@ -221,7 +225,8 @@ namespace ACONRP.Evaluator
                         curCondition.penalty_min_total += pen;
                         // create and add violation
                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_TOTAL", val, curCondition, lastPosition, pen);
-                        violations.Add(violation);
+                        if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                        //violations.Add(violation);
                         int day = nrOfDaysInPeriod - 1;
                         this.constraintViolationsOnDay[day] += pen;
                         this.penalty += pen;
@@ -246,7 +251,8 @@ namespace ACONRP.Evaluator
                             curCondition.penalty_max_consecutive += pen;
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_CONSECUTIVE", val, curCondition, lastPosition, pen);
-                            violations.Add(violation);
+                            if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;
@@ -263,7 +269,8 @@ namespace ACONRP.Evaluator
                         curCondition.penalty_min_consecutive += pen;
                         // create and add violation
                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_CONSECUTIVE", val, curCondition, lastPosition, pen);
-                        violations.Add(violation);
+                        if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                        //violations.Add(violation);
                         int day = nrOfDaysInPeriod - 1;
                         this.constraintViolationsOnDay[day] += pen;
                         this.penalty += pen;
@@ -287,7 +294,8 @@ namespace ACONRP.Evaluator
 
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_BETWEEN", val, curCondition, lastPosition, pen);
-                            violations.Add(violation);
+                            if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;
@@ -313,7 +321,8 @@ namespace ACONRP.Evaluator
 
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_BETWEEN", val, curCondition, lastPosition, pen);
-                            violations.Add(violation);
+                            if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;
@@ -334,7 +343,8 @@ namespace ACONRP.Evaluator
 
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_PERT", val, curCondition, iNum, pen);
-                            violations.Add(violation);
+                            if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;
@@ -353,7 +363,8 @@ namespace ACONRP.Evaluator
 
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_PERT", val, curCondition, iNum, pen);
-                            violations.Add(violation);
+                            if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
+                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;
@@ -366,21 +377,18 @@ namespace ACONRP.Evaluator
 
         }
 
-        public int GetCost(Node nodeToEvaluate, List<Condition> conditions, List<Violation> violations)
+        public int GetCost(Node nodeToEvaluate, List<Condition> conditions, bool trackViolations = false)
         {
             InitialiseEvaluation(nodeToEvaluate, conditions);
-            IntermediateEvaluation(nodeToEvaluate, conditions, violations);
-            FinalEvaluation(nodeToEvaluate, conditions, violations);
+            IntermediateEvaluation(nodeToEvaluate, conditions, trackViolations);
+            FinalEvaluation(nodeToEvaluate, conditions, trackViolations);
 
             int temp = 0;
-
             foreach (Condition c in conditions)
             {
                 int cCost = c.GetCost();
                 temp += cCost;
             }
-
-
             return temp;
         }
 
