@@ -30,6 +30,7 @@ namespace ACONRP
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int[,] CoverRequirements { get; set; }
+        public int[] CoverRequirementsArray { get; set; }
         public Dictionary<string, int> GradeIndex = new Dictionary<string, int>();
         public Dictionary<string, int> ShiftPatternIndex = new Dictionary<string, int>();
         public Dictionary<string, List<int>> DayIndex = new Dictionary<string, List<int>>
@@ -46,7 +47,7 @@ namespace ACONRP
         private double CurrentPheromone_0 { get; set; }
 
 
-        public int NodeSelection(Tuple<double, int[,]>[] heuristicInformation, List<Node>[] nodes, List<Edge> edges, int nurseDestinationIdex)
+        public int NodeSelection(Tuple<double, int[]>[] heuristicInformation, List<Node>[] nodes, List<Edge> edges, int nurseDestinationIdex)
         {
             int nurseSourceIndex = nurseDestinationIdex - 1;
 
@@ -246,26 +247,34 @@ namespace ACONRP
             //simple pheromone evaporation update
             edges.Except(solutionEdgeList).ToList().ForEach(x => x.Pheromone = (1.0 - PARAM_EPSILON) * x.Pheromone);
         }
-
         /// <summary>
         /// Returns an arrray of couples where:
         ///     The first element denotes the value of the heuristic information of the node (static*dynamic)
-        ///     The second element is the resulting cover requirements matrix after the application of the node ShiftPattern
+        ///     The second element is the resulting cover requirements array after the application of the node ShiftPattern
         /// </summary>
         /// <param name="nodes"></param>
         /// <param name="coverRequirements"></param>
         /// <returns></returns>
-        public Tuple<double, int[,]>[] ComputeHeuristicInfo(List<Node> nodes, int[,] coverRequirements)
+        public Tuple<double, int[]>[] ComputeHeuristicInfo(List<Node> nodes, int[] coverRequirements)
         {
-            var heuristicInfo = new Tuple<double, int[,]>[nodes.Count];
+            var heuristicInfo = new Tuple<double, int[]>[nodes.Count];
             foreach (var node in nodes)
             {
-                heuristicInfo[node.Index] = ApplySingleSolution(node, (int[,])coverRequirements.Clone());
+                heuristicInfo[node.Index] = ApplySingleSolution(node, (int[])coverRequirements.Clone());
             }
-
             return heuristicInfo;
         }
 
+        //public Tuple<double, int[,]>[] ComputeHeuristicInfoOLD(List<Node> nodes, int[,] coverRequirements)
+        //{
+        //    var heuristicInfo = new Tuple<double, int[,]>[nodes.Count];
+        //    foreach (var node in nodes)
+        //    {
+        //        heuristicInfo[node.Index] = ApplySingleSolutionOLD(node, (int[,])coverRequirements.Clone());
+        //    }
+
+        //    return heuristicInfo;
+        //}
         internal void InitializeStandardPheromone(Fitness fitness)
         {
             Pheromone_0 = 1.0 / (fitness.CompleteFitnessValue + 1.0);
@@ -348,41 +357,61 @@ namespace ACONRP
         //        });
         //    }
         //}
-
-        public Tuple<double, int[,]> ApplySingleSolution(Node node, int[,] coverRequirements)
+        public Tuple<double, int[]> ApplySingleSolution(Node node, int[] coverRequirements)
         {
-            int[,] coverReqUpdated = new int[coverRequirements.GetLength(0), coverRequirements.GetLength(1)];
-            //Console.WriteLine("Starting cover requirements matrix:\n");
-            //PrintCoverRequirements(coverRequirements);
+            //int[] coverReqUpdated = new int[coverRequirements.Length];            
             double coveredShifts = 0;
             double overAssignment = 0;
-            for (int i = 0; i < node.ShiftPatternMatrix.GetLength(0); i++)
+
+            foreach (int pos in node.ShiftPatternSparse)
             {
-                for (int j = 0; j < node.ShiftPatternMatrix.GetLength(1); j++)
-                {
-                    int uncoverQuantity = coverRequirements[i, j] - ((node.ShiftPatternMatrix[i, j]) ? 1 : 0);
-                    if (uncoverQuantity >= 0)
-                    {
-                        coveredShifts += coverRequirements[i, j] - uncoverQuantity;
-                    }
-                    else
-                    {
-                        //If an over assignment has been found then the value of coveredShift will be decrease properly
-                        //coveredShifts += coverRequirements[i, j] - (Math.Abs(coverRequirements[i, j] - uncoverQuantity));
-                        overAssignment++;
-                    }
-                    //coveredShifts += Math.Abs(uncoverQuantity);
-                    coverReqUpdated[i, j] = (uncoverQuantity > 0) ? uncoverQuantity : 0;
-                }
+                int uncoverQuantity = coverRequirements[pos] - 1;
+                if (uncoverQuantity >= 0) coveredShifts++;
+                else overAssignment++;
+                coverRequirements[pos] = (uncoverQuantity > 0) ? uncoverQuantity : 0;
             }
+
             //If the number of covered shifts is negative then some over assignments have been identified, therefore the total value can't be more then 0.
             double coefOverAssignment = overAssignment * PARAM_GAMMA;
             coveredShifts -= coefOverAssignment;
-            coveredShifts = (coveredShifts < 0) ? 0 : coveredShifts; //TODO: Valutare se impostare 1 per essere meno severi
-            //Console.WriteLine("Updated cover requirements matrix:\n");
-            //PrintCoverRequirements(coverReqUpdated);
-            return new Tuple<double, int[,]>(node.StaticHeuristicInfo * Math.Pow(coveredShifts,PARAM_DELTA), coverReqUpdated);
+            coveredShifts = (coveredShifts < 0) ? 0 : coveredShifts; //TODO: Valutare se impostare 1 per essere meno severi            
+            return new Tuple<double, int[]>(node.StaticHeuristicInfo * Math.Pow(coveredShifts, PARAM_DELTA), coverRequirements);
         }
+
+        //public Tuple<double, int[,]> ApplySingleSolutionOLD(Node node, int[,] coverRequirements)
+        //{
+        //    int[,] coverReqUpdated = new int[coverRequirements.GetLength(0), coverRequirements.GetLength(1)];
+        //    //Console.WriteLine("Starting cover requirements matrix:\n");
+        //    //PrintCoverRequirements(coverRequirements);
+        //    double coveredShifts = 0;
+        //    double overAssignment = 0;
+        //    for (int i = 0; i < node.ShiftPatternMatrix.GetLength(0); i++)
+        //    {
+        //        for (int j = 0; j < node.ShiftPatternMatrix.GetLength(1); j++)
+        //        {
+        //            int uncoverQuantity = coverRequirements[i, j] - ((node.ShiftPatternMatrix[i, j]) ? 1 : 0);
+        //            if (uncoverQuantity >= 0)
+        //            {
+        //                coveredShifts += coverRequirements[i, j] - uncoverQuantity;
+        //            }
+        //            else
+        //            {
+        //                //If an over assignment has been found then the value of coveredShift will be decrease properly
+        //                //coveredShifts += coverRequirements[i, j] - (Math.Abs(coverRequirements[i, j] - uncoverQuantity));
+        //                overAssignment++;
+        //            }
+        //            //coveredShifts += Math.Abs(uncoverQuantity);
+        //            coverReqUpdated[i, j] = (uncoverQuantity > 0) ? uncoverQuantity : 0;
+        //        }
+        //    }
+        //    //If the number of covered shifts is negative then some over assignments have been identified, therefore the total value can't be more then 0.
+        //    double coefOverAssignment = overAssignment * PARAM_GAMMA;
+        //    coveredShifts -= coefOverAssignment;
+        //    coveredShifts = (coveredShifts < 0) ? 0 : coveredShifts; //TODO: Valutare se impostare 1 per essere meno severi
+        //    //Console.WriteLine("Updated cover requirements matrix:\n");
+        //    //PrintCoverRequirements(coverReqUpdated);
+        //    return new Tuple<double, int[,]>(node.StaticHeuristicInfo * Math.Pow(coveredShifts, PARAM_DELTA), coverReqUpdated);
+        //}
         public void PrintCoverRequirements(int[,] coverRequirements)
         {
             for (int i = 0; i < coverRequirements.GetLength(0); i++)
@@ -402,71 +431,93 @@ namespace ACONRP
         /// </summary>
         /// <param name="mainSolution">A list of nodes that rappresents a complete solution</param>
         /// <returns></returns>
-        public Tuple<Fitness, int[,]> ApplySolution(List<Node> mainSolution)
+        public Tuple<Fitness, int[]> ApplySolution(List<Node> mainSolution)
         {
-            
-
             int uncoveredShifts = 0;
-            int[,] coverRequirements = (int[,])CoverRequirements.Clone(); ;
+            int[] coverRequirements = (int[])CoverRequirementsArray.Clone();
             int totalSolutionCost = 0;
+            //the nurse has been assign to a shift that do not require any nurse
+            int totalOverShift = 0;
 
-
-//#if DEBUG
-//            Console.WriteLine("Cover requirements before applying the solution");
-//            for (int i = 0; i < coverRequirements.GetLength(0); i++)
-//            {
-//                for (int j = 0; j < coverRequirements.GetLength(1); j++)
-//                {
-//                    Console.Write($" {(coverRequirements[i, j])} ");
-//                }
-//                Console.Write("\n");
-//            }
-//            Console.Write("\n");
-//#endif
-
-            int totalOvershift = 0; //the nurse has been assign to a shift that do not require any nurse
-            //Console.WriteLine("Starting cover requirements matrix:\n");
-            //PrintCoverRequirements(coverRequirements);            
             foreach (Node node in mainSolution)
             {
-                for (int i = 0; i < node.ShiftPatternMatrix.GetLength(0); i++)
+                foreach (int pos in node.ShiftPatternSparse)
                 {
-                    for (int j = 0; j < node.ShiftPatternMatrix.GetLength(1); j++)
-                    {
-                        int singleUncoveredShift = coverRequirements[i, j] - ((node.ShiftPatternMatrix[i, j]) ? 1 : 0);
-                        totalOvershift += (singleUncoveredShift < 0) ? 1 : 0;
-                        coverRequirements[i, j] = (singleUncoveredShift < 0) ? 0 : singleUncoveredShift;
-                    }
+                    int singleUncoveredShift = coverRequirements[pos] - 1;
+                    totalOverShift += (singleUncoveredShift < 0) ? 1 : 0;
+                    coverRequirements[pos] = (singleUncoveredShift < 0) ? 0 : singleUncoveredShift;
                 }
                 totalSolutionCost += node.Cost;
             }
+            for (int i = 0; i < coverRequirements.Length; i++) uncoveredShifts += coverRequirements[i];
 
-            for (int i = 0; i < coverRequirements.GetLength(0); i++)
-            {
-                for (int j = 0; j < coverRequirements.GetLength(1); j++)
-                {
-                    uncoveredShifts += coverRequirements[i, j];
-                }
-            }
 
-            //#if DEBUG
-            //            Console.WriteLine("Cover requirements after applying the solution");
-            //            for (int i = 0; i < coverRequirements.GetLength(0); i++)
-            //            {
-            //                for (int j = 0; j < coverRequirements.GetLength(1); j++)
-            //                {
-            //                    Console.Write($" {(coverRequirements[i, j])} ");
-            //                }
-            //                Console.Write("\n");
-            //            }
-            //#endif
-
-            //Console.WriteLine("Updated cover requirements matrix:\n");
-            //PrintCoverRequirements(coverRequirements);
-            Fitness fitnessSolution = new Fitness() { UncoveredShifts = uncoveredShifts, TotalOvershift = totalOvershift, TotalSolutionCost = totalSolutionCost };
-
-            return new Tuple<Fitness, int[,]>(fitnessSolution, coverRequirements);
+            Fitness fitnessSolution = new Fitness() { UncoveredShifts = uncoveredShifts, TotalOverShift = totalOverShift, TotalSolutionCost = totalSolutionCost };
+            return new Tuple<Fitness, int[]>(fitnessSolution, coverRequirements);
         }
+
+        //public Tuple<Fitness, int[,]> ApplySolutionOLD(List<Node> mainSolution)
+        //{
+        //    int uncoveredShifts = 0;
+        //    int[,] coverRequirements = (int[,])CoverRequirements.Clone(); ;
+        //    int totalSolutionCost = 0;
+
+        //    //#if DEBUG
+        //    //            Console.WriteLine("Cover requirements before applying the solution");
+        //    //            for (int i = 0; i < coverRequirements.GetLength(0); i++)
+        //    //            {
+        //    //                for (int j = 0; j < coverRequirements.GetLength(1); j++)
+        //    //                {
+        //    //                    Console.Write($" {(coverRequirements[i, j])} ");
+        //    //                }
+        //    //                Console.Write("\n");
+        //    //            }
+        //    //            Console.Write("\n");
+        //    //#endif
+
+        //    int totalOvershift = 0; //the nurse has been assign to a shift that do not require any nurse
+        //    //Console.WriteLine("Starting cover requirements matrix:\n");
+        //    //PrintCoverRequirements(coverRequirements);            
+        //    foreach (Node node in mainSolution)
+        //    {
+        //        for (int i = 0; i < node.ShiftPatternMatrix.GetLength(0); i++)
+        //        {
+        //            for (int j = 0; j < node.ShiftPatternMatrix.GetLength(1); j++)
+        //            {
+        //                int singleUncoveredShift = coverRequirements[i, j] - ((node.ShiftPatternMatrix[i, j]) ? 1 : 0);
+        //                totalOvershift += (singleUncoveredShift < 0) ? 1 : 0;
+        //                coverRequirements[i, j] = (singleUncoveredShift < 0) ? 0 : singleUncoveredShift;
+        //            }
+        //        }
+        //        totalSolutionCost += node.Cost;
+        //    }
+
+        //    for (int i = 0; i < coverRequirements.GetLength(0); i++)
+        //    {
+        //        for (int j = 0; j < coverRequirements.GetLength(1); j++)
+        //        {
+        //            uncoveredShifts += coverRequirements[i, j];
+        //        }
+        //    }
+
+        //    //#if DEBUG
+        //    //            Console.WriteLine("Cover requirements after applying the solution");
+        //    //            for (int i = 0; i < coverRequirements.GetLength(0); i++)
+        //    //            {
+        //    //                for (int j = 0; j < coverRequirements.GetLength(1); j++)
+        //    //                {
+        //    //                    Console.Write($" {(coverRequirements[i, j])} ");
+        //    //                }
+        //    //                Console.Write("\n");
+        //    //            }
+        //    //#endif
+
+        //    //Console.WriteLine("Updated cover requirements matrix:\n");
+        //    //PrintCoverRequirements(coverRequirements);
+        //    Fitness fitnessSolution = new Fitness() { UncoveredShifts = uncoveredShifts, TotalOverShift = totalOvershift, TotalSolutionCost = totalSolutionCost };
+
+        //    return new Tuple<Fitness, int[,]>(fitnessSolution, coverRequirements);
+        //}
 
         /// <summary>
         /// Returns a solution as a list that is made of the best nodes per single employee.
@@ -529,6 +580,8 @@ namespace ACONRP
         {
             int periodInDays = EndDate.Subtract(StartDate).Days + 1;
             CoverRequirements = new int[InputData.ShiftTypes.Shift.Count, periodInDays];
+            CoverRequirementsArray = new int[InputData.ShiftTypes.Shift.Count * periodInDays];
+
             foreach (var coverDay in InputData.CoverRequirements.DayOfWeekCover)
             {
                 foreach (var coverShift in coverDay.Cover)
@@ -538,7 +591,23 @@ namespace ACONRP
                     DayIndex[coverDay.Day].ForEach(index => CoverRequirements[shiftIndex, index] = coverReqValue);
                 }
             }
+
+            MatrixToArrayConverter(CoverRequirements, CoverRequirementsArray);
         }
+
+        private static void MatrixToArrayConverter(int[,] matrix, int[] array)
+        {
+            int k = 0;
+            for (int i = 0; i != matrix.GetLength(1); i++)
+            {
+                for (int j = 0; j != matrix.GetLength(0); j++)
+                {
+                    array[k] = matrix[j, i];
+                    k++;
+                }
+            }
+        }
+
 
         public void ComputeStaticHeuristic(List<Node>[] nodes)
         {
@@ -555,11 +624,16 @@ namespace ACONRP
                 //var unwantedDays = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length > 1)).ToList();
 
                 var nurseIndex = nurses.IndexOf(nurse);
+
+                foreach (Node node in nodes[nurseIndex])
+                {
+                    node.StaticHeuristicInfo = 1.0 / (1.0 + node.Cost);
+                }
                 //var costsUnwantedShift = HandleUnwantedShift(unwantedShift, nodes[nurseIndex]);
                 //var costsUnwantedDay = HandleUnwantedDays(unwantedDays, nodes[nurseIndex]);
 
-                var costSoftConst = Evaluator.CalculatePenalty(nodes[nurseIndex]);
-
+                //var costSoftConst = Evaluator.CalculatePenalty(nodes[nurseIndex]);
+                
                 //for (int i = 0; i < nodes[nurseIndex].Count; i++)
                 //{
                 //    //double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i) + costSoftConst.ElementAt(i);
@@ -623,7 +697,7 @@ namespace ACONRP
                     if (!indexDay.HasValue)
                         break;
 
-                    if (patternEntry.ShiftType == "Any") 
+                    if (patternEntry.ShiftType == "Any")
                     {
                         if (Utils.GetColumn<bool>(nursePattern, indexDay.Value).Contains(true)) //at least one any pattern per group have assigned
                         {
@@ -664,7 +738,7 @@ namespace ACONRP
             {
                 if (patternEntry.ShiftType == "Any")
                     newList.Add(patternEntry);
-                else if(newList.Count >0)
+                else if (newList.Count > 0)
                 {
                     groups.Add(newList);
                     newList = new List<PatternEntry>();
@@ -677,7 +751,7 @@ namespace ACONRP
                 newList = new List<PatternEntry>();
             }
 
-            return groups.Where(g=>g.Count()>1).ToList(); //the list with only one element (isolated any) are removed from the list
+            return groups.Where(g => g.Count() > 1).ToList(); //the list with only one element (isolated any) are removed from the list
         }
 
         private int GetDaysTo(DateTime startDate, string day)

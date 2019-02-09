@@ -37,6 +37,17 @@ namespace ACONRP.Evaluator
             firstSaturday = GetFirstSaturday(startDate, endDate);
             numWeekends = GetNumWeekends(firstSaturday, startDate, endDate);
         }
+        /// <summary>
+        /// Evalutador overloaded constractor
+        /// </summary>
+        /// <param name="inputData"></param>
+        /// <param name="nurseId"></param>
+        public Evalutador(SchedulingPeriod inputData, int nurseId) : this(inputData)
+        {
+            scheduleEvaluator = new ScheduleEvaluator(inputDataLocal);
+            conditions.Clear();
+            BuildConditionsList(nurseId);
+        }
 
         private int GetNumWeekends(int firstSaturday, DateTime startDate, DateTime endDate)
         {
@@ -57,7 +68,7 @@ namespace ACONRP.Evaluator
             for (int i = 0; i < endDate.Subtract(startDate).Days; i++)
             {
                 if (startDate.AddDays(i).DayOfWeek.ToString() == "Saturday") return i;
-                
+
             }
             throw new Exception($"No Saturday found between {startDate} - {endDate}");
         }
@@ -75,7 +86,7 @@ namespace ACONRP.Evaluator
             Condition c;
             c = new MaxAndMinConsecutiveWorkingDaysCondition(numUnits, numDays, contract);
             conditions.Add(c);
-            
+
             c = new MaxAndMinConsecutiveFreeDaysCondition(numUnits, numDays, contract);
             conditions.Add(c);
 
@@ -96,7 +107,7 @@ namespace ACONRP.Evaluator
 
             c = new RequestedDayOffCondition(numUnits, numDays, contract, dayOffRequests, startDate);
             conditions.Add(c);
-            
+
             c = new RequestedShiftOffCondition(numUnits, numDays, contract, shiftOffRequests, shiftTypesDict, startDate);
             conditions.Add(c);
 
@@ -130,12 +141,12 @@ namespace ACONRP.Evaluator
             BuildConditionsList(nodesToEvaluate[0].NurseId);
             int median = 0;
             foreach (Node node in nodesToEvaluate)
-            {                
+            {
                 int nodeCost = 0;
                 nodeCost = scheduleEvaluator.GetCost(node, conditions);
                 node.Cost = nodeCost;
                 node.StaticHeuristicInfo = 1.0 / (1.0 + nodeCost);
-                
+
                 costs.Add(nodeCost);
                 median++;
                 //PrintSingleShiftPattern(nodeToEvaluate);
@@ -151,6 +162,15 @@ namespace ACONRP.Evaluator
             //Console.WriteLine("Soft Constraint ShiftPatterns Violation for nurse: " + nodesToEvaluate[0].NurseId + " = " + cost + " , Average Cost = " + (cost/median));
             return costs;
         }
+        /// <summary>
+        /// Calculate penalty and cost of a single node
+        /// </summary>
+        /// <param name="node">Node to evaluate</param>
+        public void CalculateNodePenalty(Node node)
+        {
+            int nodeCost = scheduleEvaluator.GetCost(node, conditions);
+            node.Cost = nodeCost;
+        }
         public void CalculateSolutionPenalty(List<Node> nodesToEvaluate)
         {
             bool enableViolTracking = true;
@@ -159,10 +179,10 @@ namespace ACONRP.Evaluator
             foreach (Node node in nodesToEvaluate)
             {
                 conditions.Clear();
-                BuildConditionsList(node.NurseId);            
+                BuildConditionsList(node.NurseId);
                 node.Violations = new List<string>();
-                int nodeCost = scheduleEvaluator.GetCost(node, conditions, enableViolTracking);                              
-            }            
+                int nodeCost = scheduleEvaluator.GetCost(node, conditions, enableViolTracking);
+            }
         }
 
         public List<string> GetNodeViolations(int nurseID, int nodeIndex)
@@ -174,14 +194,14 @@ namespace ACONRP.Evaluator
                 string strViol = viol.ToString();
                 nodeViolations.Add(strViol);
             }
-            return nodeViolations;   
+            return nodeViolations;
         }
 
         private void PrintSingleShiftPattern(Node nodeToEvaluate)
         {
             {
                 //Swap from Matrix data structure to simple array data structure
-                bool[] rooster = new bool[nodeToEvaluate.ShiftPatternMatrix.GetLength(0)* nodeToEvaluate.ShiftPatternMatrix.GetLength(1)];
+                bool[] rooster = new bool[nodeToEvaluate.ShiftPatternMatrix.GetLength(0) * nodeToEvaluate.ShiftPatternMatrix.GetLength(1)];
                 int k = 0;
                 bool[,] tempMatrix = nodeToEvaluate.ShiftPatternMatrix;
                 for (int i = 0; i != tempMatrix.GetLength(1); i++)

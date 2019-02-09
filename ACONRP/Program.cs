@@ -14,9 +14,9 @@ namespace ACONRP
         static void Main(string[] args)
         {
             //var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
-            var inputData = InputData.GetObjectDataFromFile("Instances/toy1.xml");
+            //var inputData = InputData.GetObjectDataFromFile("Instances/toy1.xml");
             //var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
-            //var inputData = InputData.GetObjectDataFromFile("Instances/toy2.xml");
+            var inputData = InputData.GetObjectDataFromFile("Instances/toy2.xml");
             ACOHandler handler = new ACOHandler(inputData);
             List<Node>[] nodes = handler.GenerationManager.GetShiftPatterns();
 
@@ -50,8 +50,7 @@ namespace ACONRP
             //NodeTestToy1(nodes);
 
             List<Edge> edges = new List<Edge>();
-
-            //Stampa dei nodi generati
+            
             //handler.GenerationManager.PrintAllNodes(nodes);
 
             handler.ComputeStaticHeuristic(nodes);
@@ -67,26 +66,27 @@ namespace ACONRP
             do
             {
                 Console.Write(".");
-                List<Ant> ants = Ant.GenerateAnts(20, handler.CoverRequirements);
+                List<Ant> ants = Ant.GenerateAnts(30, handler.CoverRequirements, handler.CoverRequirementsArray);
                 foreach (var ant in ants)
                 {
                     Console.Write(":");
                     for (int i = 0; i < handler.NurseNumber; i++)
                     {
-                        var heuristicInformation = handler.ComputeHeuristicInfo(nodes[i], ant.CoverRequirements); //(statica*dinamica) 
+                        //Compute the product between static heuristic and dynamic heuristic
+                        var heuristicInformation = handler.ComputeHeuristicInfo(nodes[i], ant.CoverRequirementsArray);
 
                         var selectedIndex = handler.NodeSelection(heuristicInformation, nodes, edges, i);
                         var selectedNode = nodes[i].ElementAt(selectedIndex);
 
                         ant.Solution.Add(selectedNode);
-                        ant.CoverRequirements = heuristicInformation[selectedIndex].Item2;
+                        //ant.CoverRequirements = heuristicInformation[selectedIndex].Item2;
+                        ant.CoverRequirementsArray = heuristicInformation[selectedIndex].Item2;
                     }
 
-                    Tuple<Fitness, int[,]> antSolutionApplied = handler.ApplySolution(ant.Solution);
-                         
-                    int[,] antSolutionUpdatedCoverReq = antSolutionApplied.Item2;
+                    Tuple<Fitness, int[]> antSolutionApplied = handler.ApplySolution(ant.Solution);                         
+                    int[] antSolutionUpdatedCoverReq = antSolutionApplied.Item2;
 
-                    //Aggiornamento degli edge
+                    //Edges update
                     handler.ListOfEdgesUpdate(ant.Solution, edges);
 
                     if (Fitness.FitnessCompare(antSolutionApplied.Item1, mainSolutionFitnessValue) == 1)
@@ -96,7 +96,7 @@ namespace ACONRP
                         mainSolution = ant.Solution;
                         mainSolutionFitnessValue = antSolutionApplied.Item1;
                         consecutiveNoImprovements = 0;
-                        Console.Write($" {antSolutionApplied.Item1.UncoveredShifts} + {antSolutionApplied.Item1.TotalOvershift} + {antSolutionApplied.Item1.TotalSolutionCost} ");
+                        Console.Write($" {antSolutionApplied.Item1.UncoveredShifts} + {antSolutionApplied.Item1.TotalOverShift} + {antSolutionApplied.Item1.TotalSolutionCost} ");
                     }
                     else
                     {
@@ -107,12 +107,11 @@ namespace ACONRP
 
                 handler.GlobalPheromoneUpdate(mainSolution, mainSolutionFitnessValue, edges);
 
-            } while (consecutiveNoImprovements < 10);
+            } while (consecutiveNoImprovements < 30);
 
-            handler.Evaluator.CalculateSolutionPenalty(mainSolution);
-            Console.WriteLine("\nThe ACO Algorithm has produced the following solution: ");          
-            handler.GenerationManager.PrintSolutionNodes(mainSolution);
-            Console.WriteLine($"\nThis solution had a total fitness value of {mainSolutionFitnessValue.CompleteFitnessValue}");
+            handler.Evaluator.CalculateSolutionPenalty(mainSolution);            
+            handler.GenerationManager.PrintSolution(mainSolution, mainSolutionFitnessValue);
+            
             Console.ReadKey();
         }
         

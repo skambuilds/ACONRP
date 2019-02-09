@@ -87,6 +87,7 @@ namespace ACONRP.Evaluator
                             }
                             catch (Exception e)
                             {
+                                Console.WriteLine($"Exception occured: {e.ToString()}");
                             }
                         }
 

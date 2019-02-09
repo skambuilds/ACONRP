@@ -5,14 +5,14 @@ namespace ACONRP
     public class Fitness
     {
         public int UncoveredShifts { get; set; }
-        public int TotalOvershift { get; set; }
+        public int TotalOverShift { get; set; }
         public int TotalSolutionCost { get; set; }
 
         public int CompleteFitnessValue
         {
             get
             {
-                return UncoveredShifts + TotalOvershift + TotalSolutionCost;
+                return UncoveredShifts + TotalOverShift + TotalSolutionCost;
             }
         }
         /// <summary>
@@ -34,11 +34,11 @@ namespace ACONRP
             {
                 return 1;
             }
-            if (fitnessOne.TotalOvershift > fitnessTwo.TotalOvershift)
+            if (fitnessOne.TotalOverShift > fitnessTwo.TotalOverShift)
             {
                 return -1;
             }
-            else if (fitnessOne.TotalOvershift < fitnessTwo.TotalOvershift)
+            else if (fitnessOne.TotalOverShift < fitnessTwo.TotalOverShift)
             {
                 return 1;
             }

@@ -13,6 +13,7 @@ namespace ACONRP
         public int Index { get; set; }        
         public bool[,] ShiftPatternMatrix { get; set; }
         public bool[] ShiftPatternArray { get; set; }
+        public List<int> ShiftPatternSparse { get; set; }
         public double StaticHeuristicInfo { get; set; }
         public List<string> Violations { get; set; }
         /// <summary>
