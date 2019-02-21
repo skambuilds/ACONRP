@@ -39,7 +39,7 @@ namespace ACONRP.Evaluator
 
             foreach (DayOff rdo in dayOffRequests)
             {
-                int day = DateOffset(start, Convert.ToDateTime(rdo.Date)) - 1;
+                int day = Utils.DateOffset(start, Convert.ToDateTime(rdo.Date)) - 1;
 
                 for (int i = 0; i != numUnits; i++)
                 {
@@ -68,12 +68,6 @@ namespace ACONRP.Evaluator
             throw new NotImplementedException();
         }
 
-        public static int DateOffset(DateTime start, DateTime date)
-        {
-            TimeSpan interval = ((Convert.ToDateTime(date) - Convert.ToDateTime(start)));
-            int nrOfDays = (interval.Days) + 1;
-
-            return nrOfDays;
-        }
+       
     }
 }

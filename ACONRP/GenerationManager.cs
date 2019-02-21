@@ -22,6 +22,8 @@ namespace ACONRP
         /// Number of shift types
         /// </summary>
         private int numShiftTypes = 4;
+        DateTime startDate = DateTime.MinValue;
+        DateTime endDate = DateTime.MinValue;
         /// <summary>
         /// Number of days to perform the shift assignment
         /// </summary>
@@ -45,7 +47,7 @@ namespace ACONRP
         /// <summary>
         /// Maximum number of shift patterns for each possible assignment value
         /// </summary>
-        private const decimal maximumLimit = 2000;
+        private const decimal maximumLimit = 5000;
         /// <summary>
         /// Indicates if the single assignment per day option is active
         /// </summary>
@@ -61,7 +63,7 @@ namespace ACONRP
         /// <summary>
         /// Enable maximum and minimum number of assigment violation, the value is the amount of violation - put 0 to disable
         /// </summary>
-        private const int assntViolation = 4;
+        private const int assntViolation = 6;
         /// <summary>
         /// Enable the maximum number of consecutive working days violation, 
         /// if set to 2 an half of the generated shift patterns will contain the violation - put 1 to disable
@@ -70,7 +72,7 @@ namespace ACONRP
         /// <summary>
         /// Amount of the maximum number of consecutive working days violation
         /// </summary>
-        private const int maxConsViolation = 2;
+        private const int maxConsViolation = 3;
 
         //Shift patterns files location
         private string shiftDirectoryName = "ShiftPatterns/";
@@ -198,17 +200,15 @@ namespace ACONRP
         private Node NodeInitializer(int i, int lineCounter, string line)
         {
             Node node = new Node();
-            //bool[,] shiftPatternMatrix = ArrayToMatrixConverter(shiftPatternBool);
             string[] lineString = line.Split(';');
             int endingPosition = lineString.Length - 1;
             List<int> shiftPatternSparse = ShiftPatternSparseLoader(lineString, endingPosition);
             bool[] shiftPatternBool = ShiftPatternConverter(shiftPatternSparse);
             node.Index = lineCounter;
             node.NurseId = i;
-            //node.ShiftPatternMatrix = shiftPatternMatrix;
             node.ShiftPatternArray = shiftPatternBool;
             node.ShiftPatternSparse = shiftPatternSparse;
-            node.Cost = NodeCostLoader(lineString, endingPosition);            
+            node.Cost = NodeCostLoader(lineString, endingPosition);
             node.StaticHeuristicInfo = 0.00;
             return node;
         }
@@ -236,7 +236,7 @@ namespace ACONRP
             return shiftPatternBool;
         }
         private List<int> ShiftPatternSparseLoader(string[] shiftPattern, int endingPosition)
-        {            
+        {
             List<int> shiftPatternSparse = new List<int>();
             for (int j = 0; j < endingPosition; j++)
             {
@@ -257,8 +257,8 @@ namespace ACONRP
             istanceSubDirectory = $"{InputData.ID}/";
             numberOfNurses = InputData.Employees.Employee.Count;
             numShiftTypes = InputData.ShiftTypes.Shift.Count;
-            DateTime startDate = Convert.ToDateTime(InputData.StartDate);
-            DateTime endDate = Convert.ToDateTime(InputData.EndDate);
+            startDate = Convert.ToDateTime(InputData.StartDate);
+            endDate = Convert.ToDateTime(InputData.EndDate);
             numOfDays = endDate.Day - startDate.Day + 1;
         }
         /// <summary>
@@ -317,9 +317,6 @@ namespace ACONRP
                 for (int i = minLimit; i <= maxLimit; i++)
                 {
                     decimal iterationLimit = maximumLimit;
-                    decimal binCoefValue = BinomialCoefficentCalc(totalNumOfShifts, i);
-                    if (binCoefValue < maximumLimit) iterationLimit = binCoefValue;
-                    //Console.Write($"Expected number of nodes: {iterationLimit}  ");
                     int alreadyExistCounter = 0;
                     //Enable violation of the max consecutive working days constraint
                     bool enableViolation = false;
@@ -342,41 +339,32 @@ namespace ACONRP
                         IndexesListInitializer(indexesList, totalNumOfShifts, 0);
                         IndexesListInitializer(activeIndexes, totalNumOfShifts, 0);
 
+                        RequestedDayOffRemover(indexesList, nurseId);
+                        decimal binCoefValue = BinomialCoefficentCalc(indexesList.Count, i);
+                        if (binCoefValue < maximumLimit) iterationLimit = binCoefValue;
+
                         //Perform a number of iteration to reach the number of assignment specified in the first for loop
                         for (int k = 0; k < i; k++)
                         {
                             //Check the maximum consecutive working days value and remove from the indexes list the days indexes which can determine a violation
                             RemoveConsecutiveDays(ref baseComparisonValue, indexesList, actualRemovedElements, activeIndexes, enableViolation);
-
-                            //Error checker circularTimePeriod = true 
-                            //if (k == 4 && indexesList.Count > 0)
-                            //{
-                            //    Console.WriteLine("Errore! Attenzione!");
-                            //    PrintSingleShiftPattern(shiftPattern, numShiftTypes, k);
-                            //}
-
+                            
                             List<int> removedElements = RandomShiftAssigner(rnd, indexesList, shiftPattern, shiftPatternSparse);
                             //Add and remove the randomly extracted elements from the respective control lists
                             RemoveElementsToTotalList(removedElements, activeIndexes);
                             AddElementsToTotalList(removedElements, actualRemovedElements);
                         }
-                        //bool[,] shiftPatternMatrix = ArrayToMatrixConverter(shiftPattern);
+
                         //Check if the last generated pattern is already in the node list
                         if (!(listContainsPattern(nodesSet, shiftPatternSparse)))
                         {
                             node.Index = nodeIndex;
                             node.NurseId = nurseId;
-                            //node.ShiftPatternMatrix = shiftPatternMatrix;
                             node.ShiftPatternArray = shiftPattern;
                             node.ShiftPatternSparse = shiftPatternSparse;
                             node.StaticHeuristicInfo = 0.00;
                             //Node penalty calculation
                             Evaluator.CalculateNodePenalty(node);
-
-                            //for (int l = 0; l < shiftPattern.Length; l++)
-                            //{
-                            //    file.Write((shiftPattern[l] == true) ? '1' : '0');
-                            //}
 
                             //File writing for shift pattern and relative cost saving
                             foreach (int position in node.ShiftPatternSparse)
@@ -393,9 +381,7 @@ namespace ACONRP
                             decimal maximumUnsuccessfulIter = iterationLimit / 2;
                             if (alreadyExistCounter >= (maximumUnsuccessfulIter))
                             {
-                                iterationLimit += alreadyExistCounter;
-                                //Console.WriteLine($"\nThere have been {alreadyExistCounter} generations of an existing shift pattern");
-                                //Console.WriteLine($"The maximum consecutive unsuccessful generations limit is now: {iterationLimit}");
+                                iterationLimit += alreadyExistCounter;                                
                             }
                             alreadyExistCounter = 0;
                             j++;
@@ -415,6 +401,23 @@ namespace ACONRP
                 }
             }
             return nodesSet;
+        }
+        /// <summary>
+        /// Removes the indexes of the requested days off 
+        /// </summary>
+        /// <param name="indexesList"></param>
+        /// <param name="nurseId"></param>
+        private void RequestedDayOffRemover(List<int> indexesList, int nurseId)
+        {
+            List<DayOff> dayOffRequests = InputData.DayOffRequests.DayOff.Where(day => day.EmployeeID == nurseId.ToString()).ToList();
+            foreach (DayOff rdo in dayOffRequests)
+            {
+                int day = Utils.DateOffset(startDate, Convert.ToDateTime(rdo.Date)) - 1;
+                int index = day * numShiftTypes;
+                List<int> removedIndexes = new List<int>();
+                removedIndexes = GetIndexesToRemove(index);
+                foreach (int element in removedIndexes) indexesList.Remove(element);
+            }
         }
 
         private static void BarAnimation(ref bool dashFlag, ref bool backFlag)
@@ -1047,7 +1050,6 @@ namespace ACONRP
             {
                 arrayListIndexes.Add(i + offset);
             }
-
         }
         /// <summary>
         /// Random shift assignment function

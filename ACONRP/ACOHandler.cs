@@ -14,8 +14,8 @@ namespace ACONRP
         /// <summary>
         /// Dinamic heuristic exponential weight on eta_s * eta_d
         /// </summary>
-        public const double PARAM_DELTA = 1.0; //*
-        public const double PARAM_Q0 = 0.9; //*
+        public const double PARAM_DELTA = 4;
+        public const double PARAM_Q0 = 0.9;
         public const double PARAM_EPSILON = 0.1;
         public const double PARAM_RHO = 0.1;
         public const double PARAM_LAMBDA = 200.0;
@@ -46,7 +46,42 @@ namespace ACONRP
         private double Pheromone_0 { get; set; }
         private double CurrentPheromone_0 { get; set; }
 
+        public ACOHandler(SchedulingPeriod inputData)
+        {
+            InputData = inputData;
+            StartDate = DateTime.Parse(InputData.StartDate);
+            EndDate = DateTime.Parse(InputData.EndDate);
 
+            NurseNumber = inputData.Employees.Employee.Count;
+            GenerationManager = new GenerationManager(InputData);
+            Evaluator = new Evalutador(InputData);
+
+            WParam = new double[inputData.Skills.Skill.Count];
+            for (int i = 0; i < inputData.Skills.Skill.Count; i++)
+            {
+                GradeIndex.Add(inputData.Skills.Skill.ElementAt(i), i);
+                WParam[i] = i + 1;
+            }
+
+            var orderedShifts = inputData.ShiftTypes.Shift.ToList();
+            orderedShifts.ForEach(x => ShiftPatternIndex.Add(x.ID, orderedShifts.IndexOf(x)));
+
+            for (int i = 0; i < EndDate.Subtract(StartDate).Days + 1; i++)
+            {
+                DayIndex[StartDate.AddDays(i).DayOfWeek.ToString()].Add(i);
+            }
+
+            InitiazeCoverRequirements();
+        }
+
+        /// <summary>
+        /// Performs the ant selection of the node after the calculation of the probability function and the pseudorandom proportional rule
+        /// </summary>
+        /// <param name="heuristicInformation"></param>
+        /// <param name="nodes"></param>
+        /// <param name="edges"></param>
+        /// <param name="nurseDestinationIdex"></param>
+        /// <returns></returns>
         public int NodeSelection(Tuple<double, int[]>[] heuristicInformation, List<Node>[] nodes, List<Edge> edges, int nurseDestinationIdex)
         {
             int nurseSourceIndex = nurseDestinationIdex - 1;
@@ -54,8 +89,6 @@ namespace ACONRP
             int nodesOnSource = 1;
             if (nurseSourceIndex >= 0) nodesOnSource = nodes[nurseSourceIndex].Count;
             int nodesOnDestination = nodes[nurseDestinationIdex].Count;
-
-            //proability p(i,j)
 
             var probability = new double[nodesOnDestination];
 
@@ -88,7 +121,7 @@ namespace ACONRP
             }
 
             Random rnd = new Random();
-            //pseudorandom proportional rule
+            //Pseudorandom proportional rule
             if (rnd.NextDouble() < PARAM_Q0)
             {
                 double max = probability.Cast<double>().Max();
@@ -99,7 +132,12 @@ namespace ACONRP
                 return rnd.Next(0, probability.Count());
             }
         }
-
+        /// <summary>
+        /// Checks if the index belongs to the list of edges
+        /// </summary>
+        /// <param name="edgesFound"></param>
+        /// <param name="i"></param>
+        /// <returns></returns>
         private static bool CheckIndexNode(List<Edge> edgesFound, int i)
         {
             foreach (var edge in edgesFound)
@@ -108,13 +146,12 @@ namespace ACONRP
             }
             return false;
         }
-
+        [Obsolete("Node selection old version - now outdated")]
         public int NodeSelectionOLD(Tuple<double, int[,]>[] heuristicInformation, List<Node>[] nodes, List<Edge> edges, int nurseDestinationIdex)
         {
             int nurseSourceIndex = nurseDestinationIdex - 1;
             int nodesOnDestination = nodes[nurseDestinationIdex].Count;
 
-            //proability p(i,j)
             var probability = new double[nodesOnDestination];
 
             var overallProbability = edges.Where(ed => ed.IndexNurseA == nurseSourceIndex && ed.IndexNurseB == nurseDestinationIdex)
@@ -152,10 +189,13 @@ namespace ACONRP
 
             }
         }
-
+        /// <summary>
+        /// Performs the pheromone update on the already existing edges or adds a new edge to the list
+        /// </summary>
+        /// <param name="antSolution"></param>
+        /// <param name="edges"></param>
         internal void ListOfEdgesUpdate(List<Node> antSolution, List<Edge> edges)
         {
-
             List<Edge> firstEdge = edges.Where(ed => ed.IndexNurseA == -1 && ed.IndexNurseB == antSolution[0].NurseId && ed.IndexNodeA == 0 && ed.IndexNodeB == antSolution[0].Index).ToList();
             if (firstEdge.Count > 0)
             {
@@ -204,6 +244,7 @@ namespace ACONRP
                 }
             }
         }
+
         /// <summary>
         /// Local pheromone update is applied on the edges that belongs to the mainSolution
         /// </summary>
@@ -225,28 +266,11 @@ namespace ACONRP
 
             }
 
-            //simple pheromone evaporation update
+            //Simple pheromone evaporation update
             edges.Except(solutionEdgeList).ToList().ForEach(x => x.Pheromone = (1.0 - PARAM_EPSILON) * x.Pheromone);
             CurrentPheromone_0 = ((1.0 - PARAM_EPSILON) * CurrentPheromone_0);
         }
-        internal void LocalPheromoneUpdateOLD(List<Node> mainSolution, List<Edge> edges)
-        {
-            var solutionEdgeList = new List<Edge>();
-            foreach (var node in mainSolution)
-            {
-                if (mainSolution.Last() == node)
-                    break;
 
-                var nextNode = mainSolution.First(n => n.NurseId == node.NurseId + 1);
-
-                var solutionEdge = edges.First(ed => ed.IndexNurseA == node.NurseId && ed.IndexNurseB == nextNode.NurseId && ed.IndexNodeA == node.Index && ed.IndexNodeB == nextNode.Index);
-                solutionEdge.Pheromone = (1.0 - PARAM_EPSILON) * solutionEdge.Pheromone + PARAM_EPSILON * Pheromone_0;
-                solutionEdgeList.Add(solutionEdge);
-            }
-
-            //simple pheromone evaporation update
-            edges.Except(solutionEdgeList).ToList().ForEach(x => x.Pheromone = (1.0 - PARAM_EPSILON) * x.Pheromone);
-        }
         /// <summary>
         /// Returns an arrray of couples where:
         ///     The first element denotes the value of the heuristic information of the node (static*dynamic)
@@ -265,101 +289,14 @@ namespace ACONRP
             return heuristicInfo;
         }
 
-        //public Tuple<double, int[,]>[] ComputeHeuristicInfoOLD(List<Node> nodes, int[,] coverRequirements)
-        //{
-        //    var heuristicInfo = new Tuple<double, int[,]>[nodes.Count];
-        //    foreach (var node in nodes)
-        //    {
-        //        heuristicInfo[node.Index] = ApplySingleSolutionOLD(node, (int[,])coverRequirements.Clone());
-        //    }
-
-        //    return heuristicInfo;
-        //}
         internal void InitializeStandardPheromone(Fitness fitness)
         {
             Pheromone_0 = 1.0 / (fitness.CompleteFitnessValue + 1.0);
             CurrentPheromone_0 = Pheromone_0;
         }
 
-        internal void InitializeLocalPheromone(List<Node>[] nodes, int fitnessValue, List<Edge> edges)
-        {
-            Pheromone_0 = 1.0 / (fitnessValue + 1.0);
-
-            //All the edges between the v0 node and the very first node of the solution are added here
-            for (int i = 0; i < nodes[0].Count; i++)
-            {
-                edges.Add(new Edge()
-                {
-                    IndexNodeA = 0,
-                    IndexNurseA = -1,
-                    IndexNurseB = 0,
-                    IndexNodeB = i,
-                    Pheromone = Pheromone_0
-                });
-            }
-
-            for (int k = 0; k < nodes.Count() - 1; k++)
-            {
-                int indexNurseA = k;
-                int indexNurseB = k + 1;
-
-                for (int i = 0; i < nodes[indexNurseA].Count; i++)
-                {
-                    for (int j = 0; j < nodes[indexNurseB].Count; j++)
-                    {
-                        edges.Add(new Edge()
-                        {
-                            IndexNodeA = i,
-                            IndexNodeB = j,
-                            IndexNurseA = indexNurseA,
-                            IndexNurseB = indexNurseB,
-                            Pheromone = Pheromone_0
-                        });
-                    }
-                }
-            }
-        }
-
-        ///// <summary>
-        ///// Initializes the edges structure following the provided solution.
-        ///// In this phase the edge pheromone is set to the fitness value of the objective function using the provided solution
-        ///// </summary>
-        ///// <param name="mainSolution">Solution derived from the static heuristic info</param>
-        ///// <param name="edges">Empty list of edges</param>
-        //public void InitializeLocalPheromone(List<Node> mainSolution, List<Edge> edges)
-        //{
-        //    var fitnessValue = ApplySolution(mainSolution).Item1;
-
-        //    //Special Edges that link the imaginary v0 node (ants node) the the first node of the solution
-
-        //    edges.Add(
-        //        new Edge()
-        //        {
-        //            IndexNodeA = 0,
-        //            IndexNurseA = -1,
-        //            IndexNurseB = 0,
-        //            IndexNodeB = mainSolution.First(x => x.NurseId == 0).Index,
-        //            Pheromone = 1.0 / (fitnessValue + 1)
-        //        });
-
-        //    for (int i = 0; i < mainSolution.Count; i++)
-        //    {
-        //        if (mainSolution.Last() == mainSolution[i])
-        //            break;
-
-        //        edges.Add(new Edge
-        //        {
-        //            IndexNurseA = i,
-        //            IndexNodeA = mainSolution[i].Index,
-        //            IndexNurseB = i + 1,
-        //            IndexNodeB = mainSolution[i + 1].Index,
-        //            Pheromone = 1.0 / (fitnessValue + 1)
-        //        });
-        //    }
-        //}
         public Tuple<double, int[]> ApplySingleSolution(Node node, int[] coverRequirements)
         {
-            //int[] coverReqUpdated = new int[coverRequirements.Length];            
             double coveredShifts = 0;
             double overAssignment = 0;
 
@@ -371,47 +308,14 @@ namespace ACONRP
                 coverRequirements[pos] = (uncoverQuantity > 0) ? uncoverQuantity : 0;
             }
 
-            //If the number of covered shifts is negative then some over assignments have been identified, therefore the total value can't be more then 0.
             double coefOverAssignment = overAssignment * PARAM_GAMMA;
             coveredShifts -= coefOverAssignment;
-            coveredShifts = (coveredShifts < 0) ? 0 : coveredShifts; //TODO: Valutare se impostare 1 per essere meno severi            
+            //If the number of covered shifts is negative then there is some over assignments,
+            //therefore the total value of covered shifts can't be more then 0.
+            coveredShifts = (coveredShifts < 0) ? 0 : coveredShifts;
             return new Tuple<double, int[]>(node.StaticHeuristicInfo * Math.Pow(coveredShifts, PARAM_DELTA), coverRequirements);
         }
 
-        //public Tuple<double, int[,]> ApplySingleSolutionOLD(Node node, int[,] coverRequirements)
-        //{
-        //    int[,] coverReqUpdated = new int[coverRequirements.GetLength(0), coverRequirements.GetLength(1)];
-        //    //Console.WriteLine("Starting cover requirements matrix:\n");
-        //    //PrintCoverRequirements(coverRequirements);
-        //    double coveredShifts = 0;
-        //    double overAssignment = 0;
-        //    for (int i = 0; i < node.ShiftPatternMatrix.GetLength(0); i++)
-        //    {
-        //        for (int j = 0; j < node.ShiftPatternMatrix.GetLength(1); j++)
-        //        {
-        //            int uncoverQuantity = coverRequirements[i, j] - ((node.ShiftPatternMatrix[i, j]) ? 1 : 0);
-        //            if (uncoverQuantity >= 0)
-        //            {
-        //                coveredShifts += coverRequirements[i, j] - uncoverQuantity;
-        //            }
-        //            else
-        //            {
-        //                //If an over assignment has been found then the value of coveredShift will be decrease properly
-        //                //coveredShifts += coverRequirements[i, j] - (Math.Abs(coverRequirements[i, j] - uncoverQuantity));
-        //                overAssignment++;
-        //            }
-        //            //coveredShifts += Math.Abs(uncoverQuantity);
-        //            coverReqUpdated[i, j] = (uncoverQuantity > 0) ? uncoverQuantity : 0;
-        //        }
-        //    }
-        //    //If the number of covered shifts is negative then some over assignments have been identified, therefore the total value can't be more then 0.
-        //    double coefOverAssignment = overAssignment * PARAM_GAMMA;
-        //    coveredShifts -= coefOverAssignment;
-        //    coveredShifts = (coveredShifts < 0) ? 0 : coveredShifts; //TODO: Valutare se impostare 1 per essere meno severi
-        //    //Console.WriteLine("Updated cover requirements matrix:\n");
-        //    //PrintCoverRequirements(coverReqUpdated);
-        //    return new Tuple<double, int[,]>(node.StaticHeuristicInfo * Math.Pow(coveredShifts, PARAM_DELTA), coverReqUpdated);
-        //}
         public void PrintCoverRequirements(int[,] coverRequirements)
         {
             for (int i = 0; i < coverRequirements.GetLength(0); i++)
@@ -423,6 +327,7 @@ namespace ACONRP
                 Console.Write("\n");
             }
         }
+
         /// <summary>
         /// Returns a tuple where:
         ///     the first element is the sum of the uncovered requirement shifts
@@ -456,69 +361,6 @@ namespace ACONRP
             return new Tuple<Fitness, int[]>(fitnessSolution, coverRequirements);
         }
 
-        //public Tuple<Fitness, int[,]> ApplySolutionOLD(List<Node> mainSolution)
-        //{
-        //    int uncoveredShifts = 0;
-        //    int[,] coverRequirements = (int[,])CoverRequirements.Clone(); ;
-        //    int totalSolutionCost = 0;
-
-        //    //#if DEBUG
-        //    //            Console.WriteLine("Cover requirements before applying the solution");
-        //    //            for (int i = 0; i < coverRequirements.GetLength(0); i++)
-        //    //            {
-        //    //                for (int j = 0; j < coverRequirements.GetLength(1); j++)
-        //    //                {
-        //    //                    Console.Write($" {(coverRequirements[i, j])} ");
-        //    //                }
-        //    //                Console.Write("\n");
-        //    //            }
-        //    //            Console.Write("\n");
-        //    //#endif
-
-        //    int totalOvershift = 0; //the nurse has been assign to a shift that do not require any nurse
-        //    //Console.WriteLine("Starting cover requirements matrix:\n");
-        //    //PrintCoverRequirements(coverRequirements);            
-        //    foreach (Node node in mainSolution)
-        //    {
-        //        for (int i = 0; i < node.ShiftPatternMatrix.GetLength(0); i++)
-        //        {
-        //            for (int j = 0; j < node.ShiftPatternMatrix.GetLength(1); j++)
-        //            {
-        //                int singleUncoveredShift = coverRequirements[i, j] - ((node.ShiftPatternMatrix[i, j]) ? 1 : 0);
-        //                totalOvershift += (singleUncoveredShift < 0) ? 1 : 0;
-        //                coverRequirements[i, j] = (singleUncoveredShift < 0) ? 0 : singleUncoveredShift;
-        //            }
-        //        }
-        //        totalSolutionCost += node.Cost;
-        //    }
-
-        //    for (int i = 0; i < coverRequirements.GetLength(0); i++)
-        //    {
-        //        for (int j = 0; j < coverRequirements.GetLength(1); j++)
-        //        {
-        //            uncoveredShifts += coverRequirements[i, j];
-        //        }
-        //    }
-
-        //    //#if DEBUG
-        //    //            Console.WriteLine("Cover requirements after applying the solution");
-        //    //            for (int i = 0; i < coverRequirements.GetLength(0); i++)
-        //    //            {
-        //    //                for (int j = 0; j < coverRequirements.GetLength(1); j++)
-        //    //                {
-        //    //                    Console.Write($" {(coverRequirements[i, j])} ");
-        //    //                }
-        //    //                Console.Write("\n");
-        //    //            }
-        //    //#endif
-
-        //    //Console.WriteLine("Updated cover requirements matrix:\n");
-        //    //PrintCoverRequirements(coverRequirements);
-        //    Fitness fitnessSolution = new Fitness() { UncoveredShifts = uncoveredShifts, TotalOverShift = totalOvershift, TotalSolutionCost = totalSolutionCost };
-
-        //    return new Tuple<Fitness, int[,]>(fitnessSolution, coverRequirements);
-        //}
-
         /// <summary>
         /// Returns a solution as a list that is made of the best nodes per single employee.
         /// e.i. the best node of a list of nodes is the one with the maximum static heuristic info
@@ -533,7 +375,6 @@ namespace ACONRP
             {
                 solution.Add(nodes[i].Aggregate((agg, next) => next.StaticHeuristicInfo > agg.StaticHeuristicInfo ? next : agg));
             }
-
             return solution;
         }
 
@@ -544,35 +385,6 @@ namespace ACONRP
         public double[] WParam { get; set; }
         public int NurseNumber { get; set; }
 
-
-        public ACOHandler(SchedulingPeriod inputData)
-        {
-            InputData = inputData;
-            StartDate = DateTime.Parse(InputData.StartDate);
-            EndDate = DateTime.Parse(InputData.EndDate);
-
-            NurseNumber = inputData.Employees.Employee.Count;
-            GenerationManager = new GenerationManager(InputData);
-            Evaluator = new Evalutador(InputData);
-
-            WParam = new double[inputData.Skills.Skill.Count];
-            for (int i = 0; i < inputData.Skills.Skill.Count; i++)
-            {
-                GradeIndex.Add(inputData.Skills.Skill.ElementAt(i), i);
-                WParam[i] = i + 1;
-            }
-
-            //var orderedShifts = inputData.ShiftTypes.Shift.OrderBy(x => DateTime.Parse(x.StartTime)).ThenBy(x => DateTime.Parse(x.EndTime)).ToList();
-            var orderedShifts = inputData.ShiftTypes.Shift.ToList();
-            orderedShifts.ForEach(x => ShiftPatternIndex.Add(x.ID, orderedShifts.IndexOf(x)));
-
-            for (int i = 0; i < EndDate.Subtract(StartDate).Days + 1; i++)
-            {
-                DayIndex[StartDate.AddDays(i).DayOfWeek.ToString()].Add(i);
-            }
-
-            InitiazeCoverRequirements();
-        }
         /// <summary>
         /// Initializes the matrix of cover requirements using InputData
         /// </summary>
@@ -591,7 +403,7 @@ namespace ACONRP
                     DayIndex[coverDay.Day].ForEach(index => CoverRequirements[shiftIndex, index] = coverReqValue);
                 }
             }
-
+            //TODO: There is no more need of the cover requirements matrix, all the data can be stored in a single one dimension array
             MatrixToArrayConverter(CoverRequirements, CoverRequirementsArray);
         }
 
@@ -607,8 +419,10 @@ namespace ACONRP
                 }
             }
         }
-
-
+        /// <summary>
+        /// Computes and saves on the node the static heuristic based on the violation cost computed during the shift pattern generation
+        /// </summary>
+        /// <param name="nodes"></param>
         public void ComputeStaticHeuristic(List<Node>[] nodes)
         {
             var contracts = InputData.Contracts.Contract;
@@ -617,253 +431,11 @@ namespace ACONRP
 
             foreach (var nurse in nurses)
             {
-                //var unwantedPatterns = contracts.FirstOrDefault(contract => contract.ID == nurse.ContractID).UnwantedPatterns.Pattern;
-                //var unwantedContractPatterns = patterns.Where(pattern => unwantedPatterns.Contains(pattern.ID)).ToList();
-
-                //var unwantedShift = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length == 1)).ToList();
-                //var unwantedDays = unwantedContractPatterns.Where(x => x.PatternEntries.PatternEntry.Any(y => y.ShiftType.Length > 1)).ToList();
-
                 var nurseIndex = nurses.IndexOf(nurse);
-
                 foreach (Node node in nodes[nurseIndex])
-                {
                     node.StaticHeuristicInfo = 1.0 / (1.0 + node.Cost);
-                }
-                //var costsUnwantedShift = HandleUnwantedShift(unwantedShift, nodes[nurseIndex]);
-                //var costsUnwantedDay = HandleUnwantedDays(unwantedDays, nodes[nurseIndex]);
-
-                //var costSoftConst = Evaluator.CalculatePenalty(nodes[nurseIndex]);
-                
-                //for (int i = 0; i < nodes[nurseIndex].Count; i++)
-                //{
-                //    //double cost = costsUnwantedShift.ElementAt(i) + costsUnwantedDay.ElementAt(i) + costSoftConst.ElementAt(i);
-                //    //Console.WriteLine($"------------------------>\t COSTO : {costsUnwantedShift.ElementAt(i)} + {costsUnwantedDay.ElementAt(i)} + {costSoftConst.ElementAt(i)} = {cost}");
-                //    double cost = costSoftConst.ElementAt(i);
-                //    //Console.WriteLine($"------------------------>\t COSTO = {cost}");
-                //    nodes[nurseIndex].ElementAt(i).StaticHeuristicInfo = 1.0 / (1.0 + cost);
-                //}
             }
         }
-        private List<double> HandleUnwantedDays(List<Pattern> unwantedDays, List<Node> nodes)
-        {
-            List<double> costs = new List<double>();
 
-            foreach (var node in nodes)
-            {
-                double totalCost = 0;
-                foreach (var pattern in unwantedDays)
-                {
-                    var weight = double.Parse(pattern.Weight);
-
-                    var occurences = CheckDays(pattern.PatternEntries.PatternEntry, node.ShiftPatternMatrix);
-                    totalCost += weight * occurences;
-                }
-                costs.Add(totalCost);
-            }
-
-            return costs;
-        }
-
-        private int CheckDays(List<PatternEntry> patternEntries, bool[,] nursePattern)
-        {
-            int startWeekIndex = 0;
-            DateTime startWeekDate = new DateTime(StartDate.Ticks);
-            int daysUntilSunday = ((int)DayOfWeek.Sunday - (int)StartDate.DayOfWeek + 7) % 7;
-
-            int endWeekIndex = daysUntilSunday + startWeekIndex;
-
-            DateTime endWeekDate = startWeekDate.AddDays(daysUntilSunday);
-
-            var days = new List<String>();
-            patternEntries.ForEach(x => days.Add(x.Day));
-
-            if (!CheckDaysOnInterval(startWeekDate, endWeekDate, days))
-            {
-                //moving to the next week
-                startWeekDate = endWeekDate.AddDays(1);
-                startWeekIndex = endWeekIndex + 1;
-                endWeekIndex = startWeekIndex + 6;
-                endWeekDate = startWeekDate.AddDays(6);
-            }
-
-            var patternOccurences = 0;
-            do
-            {
-                var confirmedPattern = 0;
-                List<List<PatternEntry>> anyGroups = ExtractContiguousAnyPatterns(patternEntries);
-                foreach (var patternEntry in patternEntries)
-                {
-                    int? indexDay = DayIndex[patternEntry.Day].Where(x => x >= startWeekIndex && x <= endWeekIndex).FirstOrDefault();
-                    if (!indexDay.HasValue)
-                        break;
-
-                    if (patternEntry.ShiftType == "Any")
-                    {
-                        if (Utils.GetColumn<bool>(nursePattern, indexDay.Value).Contains(true)) //at least one any pattern per group have assigned
-                        {
-                            var belongingGroup = anyGroups.FirstOrDefault(x => x.Contains(patternEntry));
-                            if (belongingGroup != null && anyGroups.Contains(belongingGroup))
-                                anyGroups.Remove(belongingGroup);
-                        }
-                    }
-
-                    if (patternEntry.ShiftType == "None" && Utils.GetColumn<bool>(nursePattern, indexDay.Value).Contains(true))
-                        break;
-
-                    confirmedPattern++;
-                }
-                if (confirmedPattern == patternEntries.Count && anyGroups.Count == 0)
-                    patternOccurences++;
-
-                startWeekDate = endWeekDate.AddDays(1);
-                startWeekIndex = endWeekIndex + 1;
-                endWeekIndex = startWeekIndex + 6;
-                endWeekDate = startWeekDate.AddDays(6);
-            } while (endWeekDate <= EndDate);
-
-            return patternOccurences;
-        }
-
-        /// <summary>
-        /// Returns a list of list of contiguous entry pattern of shift type any
-        /// </summary>
-        /// <param name="patternEntries"></param>
-        /// <returns></returns>
-        private List<List<PatternEntry>> ExtractContiguousAnyPatterns(List<PatternEntry> patternEntries)
-        {
-            List<List<PatternEntry>> groups = new List<List<PatternEntry>>();
-            List<PatternEntry> newList = new List<PatternEntry>();
-
-            foreach (var patternEntry in patternEntries)
-            {
-                if (patternEntry.ShiftType == "Any")
-                    newList.Add(patternEntry);
-                else if (newList.Count > 0)
-                {
-                    groups.Add(newList);
-                    newList = new List<PatternEntry>();
-                }
-
-            }
-            if (newList.Count > 0)
-            {
-                groups.Add(newList);
-                newList = new List<PatternEntry>();
-            }
-
-            return groups.Where(g => g.Count() > 1).ToList(); //the list with only one element (isolated any) are removed from the list
-        }
-
-        private int GetDaysTo(DateTime startDate, string day)
-        {
-            for (int i = 0; i < 7; i++)
-            {
-                if (startDate.AddDays(i).DayOfWeek.ToString() == day)
-                    return i;
-            }
-
-            return 7;
-        }
-
-        private bool CheckDaysOnInterval(DateTime startDate, DateTime endDate, List<String> days)
-        {
-            foreach (var day in days)
-            {
-                bool dayFound = false;
-                for (int i = 0; i < endDate.Subtract(startDate).Days + 1; i++)
-                {
-                    if (startDate.AddDays(i).DayOfWeek.ToString().ToLower() == day.ToLower())
-                    {
-                        dayFound = true;
-                        break;
-                    }
-                }
-                if (!dayFound)
-                    return false;
-            }
-
-            return true;
-        }
-
-        public List<double> HandleUnwantedShift(List<Pattern> unwantedShift, List<Node> nodes)
-        {
-            List<double> costs = new List<double>();
-
-            List<UnwantedShift> assignmentPosition = new List<UnwantedShift>();
-            foreach (var node in nodes)
-            {
-
-                double totalCost = 0;
-
-                foreach (var pattern in unwantedShift)
-                {
-                    UnwantedShift shift = new UnwantedShift(pattern, ShiftPatternIndex);
-                    totalCost += shift.Check(node.ShiftPatternMatrix);
-                }
-
-                costs.Add(totalCost);
-            }
-
-            return costs;
-        }
-    }
-
-    public class UnwantedShift
-    {
-        public List<int> AssignmentPosition { get; set; } = new List<int>();
-        public bool IsTrue { get; set; }
-        public bool IsCheked { get; set; }
-        public double Weight { get; set; }
-
-        public double Check(bool[,] nursePattern)
-        {
-            int patternOccurences = 0;
-            for (int i = 0; i < nursePattern.GetLength(1); i++)
-            {
-                for (int j = 0; j < AssignmentPosition.Count && i + j < nursePattern.GetLength(1); j++)
-                {
-                    IsCheked = false;
-                    if (!nursePattern[AssignmentPosition.ElementAt(j), i + j])
-                    {
-                        IsCheked = true;
-                    }
-                    else
-                    {
-                        IsCheked = j < AssignmentPosition.Count - 1;
-                        continue;
-                    }
-
-                    if (IsCheked)
-                        break;
-                }
-
-                if (!IsCheked)
-                {
-                    patternOccurences++;
-                    IsCheked = false;
-                }
-            }
-            IsCheked = true;
-            IsTrue = patternOccurences > 0;
-            return (IsTrue) ? Weight * patternOccurences : 0;
-        }
-
-        public UnwantedShift(Pattern pattern, Dictionary<string, int> shiftPatternIndex)
-        {
-            Weight = double.Parse(pattern.Weight);
-
-            var i = 0;
-            foreach (var patternEntry in pattern.PatternEntries.PatternEntry)
-            {
-                var position = shiftPatternIndex[patternEntry.ShiftType];
-
-
-                if (patternEntry.Day == "None")//TODO: This case is not contemplated in the instances but its handling could be required in the Check method
-                    position *= -1;
-
-                AssignmentPosition.Add(position);
-                i++;
-            }
-        }
     }
 }

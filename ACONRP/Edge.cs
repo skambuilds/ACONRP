@@ -13,6 +13,5 @@ namespace ACONRP
         public int IndexNodeA { get; set; }
         public int IndexNodeB { get; set; }
         public double Pheromone { get; set; }
-
     }
 }

@@ -15,16 +15,16 @@ namespace ACONRP.Evaluator
         int nrShiftTypes;
         int numTimeUnits;
         private int penalty;
-        private int[] last_nr;
-        private int[] last_nr_pos;
+        private int[] lastNr;
+        private int[] lastNrPos;
         private int[] total;
         private int[] consecutive;
-        private int[][] pert_nr;
-        private int[] de_juiste_plaats;
-        private int[] current_nr;
-        private int[] last_nr_ini;
-        private int[] consecutive_ini;
-        private bool[] evento;
+        private int[][] pertNr;
+        private int[] rightSpot;
+        private int[] currentNr;
+        private int[] lastNrIni;
+        private int[] consecutiveIni;
+        private bool[] shiftPatternEvent;
         SchedulingPeriod sp;
 
         //Constructor
@@ -44,16 +44,16 @@ namespace ACONRP.Evaluator
             numberOfConditions = conditions.Count;
             origPenalty = nodeToEvaluate.Penalty;
             penalty = 0;
-            if (current_nr == null) current_nr = new int[numberOfConditions];
-            if (last_nr == null) last_nr = new int[numberOfConditions];
-            if (last_nr_pos == null) last_nr_pos = new int[numberOfConditions];
-            if (last_nr_ini == null) last_nr_ini = new int[numberOfConditions];
+            if (currentNr == null) currentNr = new int[numberOfConditions];
+            if (lastNr == null) lastNr = new int[numberOfConditions];
+            if (lastNrPos == null) lastNrPos = new int[numberOfConditions];
+            if (lastNrIni == null) lastNrIni = new int[numberOfConditions];
             if (consecutive == null) consecutive = new int[numberOfConditions];
-            if (consecutive_ini == null) consecutive_ini = new int[numberOfConditions];
+            if (consecutiveIni == null) consecutiveIni = new int[numberOfConditions];
             if (total == null) total = new int[numberOfConditions];
-            if (de_juiste_plaats == null) de_juiste_plaats = new int[numberOfConditions];
-            if (pert_nr == null) pert_nr = new int[numberOfConditions][];
-            if (evento == null) evento = new bool[numberOfConditions];
+            if (rightSpot == null) rightSpot = new int[numberOfConditions];
+            if (pertNr == null) pertNr = new int[numberOfConditions][];
+            if (shiftPatternEvent == null) shiftPatternEvent = new bool[numberOfConditions];
             constraintViolationsOnDay = new int[nrOfDaysInPeriod];
 
             for (int iConditions = 0; iConditions != numberOfConditions; iConditions++)
@@ -63,9 +63,9 @@ namespace ACONRP.Evaluator
                 curCondition.ResetCost();
 
                 consecutive[iConditions] = 1;
-                last_nr[iConditions] = curCondition.last_nr_history;
-                evento[iConditions] = false;
-                pert_nr[iConditions] = new int[curCondition.max_pert_nr.Length];
+                lastNr[iConditions] = curCondition.last_nr_history;
+                shiftPatternEvent[iConditions] = false;
+                pertNr[iConditions] = new int[curCondition.max_pert_nr.Length];
                 total[iConditions] = 0;
             }
         }
@@ -89,13 +89,13 @@ namespace ACONRP.Evaluator
                         int nr = conditions[iConditions].GetNumbering()[iRooster]; //Returns the numbering of the iRooster day associated to the current condition 
                         if (nr != Condition.Undefined)
                         {
-                            evento[iConditions] = true;
+                            shiftPatternEvent[iConditions] = true;
                             total[iConditions] = total[iConditions] + 1;
-                            if (nr == last_nr[iConditions] + 1)
+                            if (nr == lastNr[iConditions] + 1)
                             {
                                 consecutive[iConditions] += 1;
                             }
-                            else if (nr > last_nr[iConditions] + 1)
+                            else if (nr > lastNr[iConditions] + 1)
                             {
                                 // 4 CASES
                                 Condition curCondition = conditions[iConditions];
@@ -107,9 +107,8 @@ namespace ACONRP.Evaluator
                                         int val = curCondition.min_consecutive - consecutive[iConditions];
                                         int pen = (cost * val);
                                         curCondition.penalty_min_consecutive += pen;
-                                        Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_CONSECUTIVE", val, curCondition, last_nr_pos[iConditions], pen);
+                                        Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_CONSECUTIVE", val, curCondition, lastNrPos[iConditions], pen);
                                         if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                                        //trackViolations.Add(violation);
                                         int day = iRooster / nrShiftTypes;
                                         constraintViolationsOnDay[day] += pen;
                                         penalty += pen;
@@ -124,55 +123,52 @@ namespace ACONRP.Evaluator
                                         int pen = (cost * val);
                                         curCondition.penalty_max_consecutive += pen;
                                         // create and add violation
-                                        Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_CONSECUTIVE", val, curCondition, last_nr_pos[iConditions], pen);
+                                        Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_CONSECUTIVE", val, curCondition, lastNrPos[iConditions], pen);
                                         if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                                        //trackViolations.Add(violation);
                                         int day = iRooster / nrShiftTypes;
                                         this.constraintViolationsOnDay[day] += pen;
                                         this.penalty += pen;
                                     }
                                 }
-                                if (nr - last_nr[iConditions] - 1 < curCondition.min_between)
+                                if (nr - lastNr[iConditions] - 1 < curCondition.min_between)
                                 {
                                     int cost = curCondition.cost_min_between;
                                     if (cost > 0)
                                     {
-                                        int val = curCondition.min_between - (nr - last_nr[iConditions] - 1);
+                                        int val = curCondition.min_between - (nr - lastNr[iConditions] - 1);
                                         int pen = (cost * val);
                                         curCondition.penalty_min_between += pen;
                                         // create and add violation
-                                        Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_BETWEEN", val, curCondition, last_nr_pos[iConditions], pen);
+                                        Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_BETWEEN", val, curCondition, lastNrPos[iConditions], pen);
                                         if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                                        //trackViolations.Add(violation);
                                         int day = iRooster / nrShiftTypes;
                                         this.constraintViolationsOnDay[day] += pen;
                                         this.penalty += pen;
                                     }
                                 }
-                                if (nr - last_nr[iConditions] - 1 > curCondition.max_between)
+                                if (nr - lastNr[iConditions] - 1 > curCondition.max_between)
                                 {
                                     int cost = curCondition.cost_max_between;
                                     if (cost > 0)
                                     {
-                                        int val = (nr - last_nr[iConditions] - 1) - curCondition.max_between;
+                                        int val = (nr - lastNr[iConditions] - 1) - curCondition.max_between;
                                         int pen = (cost * val);
                                         curCondition.penalty_max_between += pen;
                                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_BETWEEN", val, curCondition, iRooster, pen);
                                         if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                                        //trackViolations.Add(violation);
                                         int day = iRooster / nrShiftTypes;
                                         this.constraintViolationsOnDay[day] += pen;
                                         this.penalty += pen;
                                     }
                                 }
                                 consecutive[iConditions] = 1;
-                            }//end ELSE
-                            pert_nr[iConditions][nr] += 1;
-                            last_nr[iConditions] = nr;
-                            last_nr_pos[iConditions] = iRooster;
-                        } // ENDIF (nr != Undefined)
+                            }
+                            pertNr[iConditions][nr] += 1;
+                            lastNr[iConditions] = nr;
+                            lastNrPos[iConditions] = iRooster;
+                        }
                     }
-                }//ENDIF if rooster[]
+                }
             }
 
         }
@@ -209,7 +205,6 @@ namespace ACONRP.Evaluator
                         // create and add violation
                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_TOTAL", val, curCondition, lastPosition, pen);
                         if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                        //violations.Add(violation);
                         int day = nrOfDaysInPeriod - 1;//?same value every time?                                 
                         this.constraintViolationsOnDay[day] += pen;
                         this.penalty += pen;
@@ -226,7 +221,6 @@ namespace ACONRP.Evaluator
                         // create and add violation
                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_TOTAL", val, curCondition, lastPosition, pen);
                         if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                        //violations.Add(violation);
                         int day = nrOfDaysInPeriod - 1;
                         this.constraintViolationsOnDay[day] += pen;
                         this.penalty += pen;
@@ -234,12 +228,12 @@ namespace ACONRP.Evaluator
                 }
                 if (curCondition.future_nr != Condition.Undefined)
                 {
-                    if (last_nr[iConditions] == curCondition.future_nr - 1)
+                    if (lastNr[iConditions] == curCondition.future_nr - 1)
                     {
                         consecutive[iConditions] += 1;
                     }
                 }
-                if (evento[iConditions])
+                if (shiftPatternEvent[iConditions])
                 {
                     if (consecutive[iConditions] > curCondition.max_consecutive)
                     {
@@ -252,14 +246,13 @@ namespace ACONRP.Evaluator
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_CONSECUTIVE", val, curCondition, lastPosition, pen);
                             if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;
                         }
                     }
                 }
-                if (last_nr[iConditions] != Condition.Undefined && consecutive[iConditions] < curCondition.min_consecutive)
+                if (lastNr[iConditions] != Condition.Undefined && consecutive[iConditions] < curCondition.min_consecutive)
                 {
                     int cost = curCondition.cost_min_consecutive;
                     if (cost > 0)
@@ -270,20 +263,19 @@ namespace ACONRP.Evaluator
                         // create and add violation
                         Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_CONSECUTIVE", val, curCondition, lastPosition, pen);
                         if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                        //violations.Add(violation);
                         int day = nrOfDaysInPeriod - 1;
                         this.constraintViolationsOnDay[day] += pen;
                         this.penalty += pen;
                     }
                 }
                 // max_between
-                if (last_nr[iConditions] != Condition.Undefined && curCondition.future_nr != Condition.Undefined)
+                if (lastNr[iConditions] != Condition.Undefined && curCondition.future_nr != Condition.Undefined)
                 {
                     int cost = curCondition.cost_max_between;
 
                     if (cost > 0)
                     {
-                        int val = curCondition.future_nr - last_nr[iConditions] - 1;
+                        int val = curCondition.future_nr - lastNr[iConditions] - 1;
 
                         if (val > curCondition.max_between)
                         {
@@ -295,7 +287,6 @@ namespace ACONRP.Evaluator
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_BETWEEN", val, curCondition, lastPosition, pen);
                             if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;
@@ -303,13 +294,13 @@ namespace ACONRP.Evaluator
                     }
                 }
                 // min_between
-                if (last_nr[iConditions] != Condition.Undefined && curCondition.future_nr != Condition.Undefined)
+                if (lastNr[iConditions] != Condition.Undefined && curCondition.future_nr != Condition.Undefined)
                 {
                     int cost = curCondition.cost_min_between;
 
                     if (cost > 0)
                     {
-                        int val = curCondition.future_nr - last_nr[iConditions] - 1;
+                        int val = curCondition.future_nr - lastNr[iConditions] - 1;
 
                         // if zero then no between!
                         if (val > 0 && val < curCondition.min_between)
@@ -322,7 +313,6 @@ namespace ACONRP.Evaluator
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_BETWEEN", val, curCondition, lastPosition, pen);
                             if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;
@@ -331,40 +321,38 @@ namespace ACONRP.Evaluator
                 }
                 for (int iNum = 0; iNum != curCondition.max_pert_nr.Length; iNum++)
                 {
-                    if (pert_nr[iConditions][iNum] != 0 && pert_nr[iConditions][iNum] > curCondition.max_pert_nr[iNum])
+                    if (pertNr[iConditions][iNum] != 0 && pertNr[iConditions][iNum] > curCondition.max_pert_nr[iNum])
                     {
                         int cost = curCondition.cost_max_pert_nr[iNum];
 
                         if (cost > 0)
                         {
-                            int val = pert_nr[iConditions][iNum] - curCondition.max_pert_nr[iNum];
+                            int val = pertNr[iConditions][iNum] - curCondition.max_pert_nr[iNum];
                             int pen = (cost * val);
                             curCondition.penalty_max_pert_nr += pen;
 
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MAX_PERT", val, curCondition, iNum, pen);
                             if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;
                         }
                     }
 
-                    if (pert_nr[iConditions][iNum] != 0 && pert_nr[iConditions][iNum] < curCondition.min_pert_nr[iNum])
+                    if (pertNr[iConditions][iNum] != 0 && pertNr[iConditions][iNum] < curCondition.min_pert_nr[iNum])
                     {
                         int cost = curCondition.cost_min_pert_nr[iNum];
 
                         if (cost > 0)
                         {
-                            int val = curCondition.min_pert_nr[iNum] - pert_nr[iConditions][iNum];
+                            int val = curCondition.min_pert_nr[iNum] - pertNr[iConditions][iNum];
                             int pen = (cost * val);
                             curCondition.penalty_min_pert_nr += pen;
 
                             // create and add violation
                             Violation violation = new Violation(nodeToEvaluate.NurseId, nodeToEvaluate.Index, "MIN_PERT", val, curCondition, iNum, pen);
                             if (trackViolations) nodeToEvaluate.Violations.Add(violation.ToString());
-                            //violations.Add(violation);
                             int day = nrOfDaysInPeriod - 1;
                             this.constraintViolationsOnDay[day] += pen;
                             this.penalty += pen;

@@ -11,53 +11,22 @@ namespace ACONRP
 {
     public partial class Program
     {
+        private const int NUM_ANTS = 30;
+        private const int NO_IMPROVEMENT_LIMIT = 30;
+
         static void Main(string[] args)
-        {
-            //var inputData = InputData.GetObjectDataFromFile("Instances/sprint_test.xml");
-            //var inputData = InputData.GetObjectDataFromFile("Instances/toy1.xml");
-            //var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint01.xml");
-            var inputData = InputData.GetObjectDataFromFile("Instances/toy2.xml");
+        {            
+            var inputData = InputData.GetObjectDataFromFile("Instances/Sprint/sprint02.xml");            
             ACOHandler handler = new ACOHandler(inputData);
             List<Node>[] nodes = handler.GenerationManager.GetShiftPatterns();
-
-
-            //NodesOrderInverter(nodes);
-
-            //List<Node>[] nodes = new List<Node>[20] {
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //    new List<Node>(),
-            //};
-
-            //NodeTest(nodes);
-            //NodeTestToy1(nodes);
-
+            
+            //List<Node>[] nodes = NodeTest();
             List<Edge> edges = new List<Edge>();
             
-            //handler.GenerationManager.PrintAllNodes(nodes);
-
             handler.ComputeStaticHeuristic(nodes);
             List<Node> mainSolution = handler.ExtractSolution(nodes);
             Fitness mainSolutionFitnessValue = handler.ApplySolution(mainSolution).Item1;
-
-            //handler.InitializeLocalPheromone(nodes, mainSolutionFitnessValue, edges);
+                    
             handler.InitializeStandardPheromone(mainSolutionFitnessValue);
             handler.ListOfEdgesUpdate(mainSolution, edges);
 
@@ -66,7 +35,7 @@ namespace ACONRP
             do
             {
                 Console.Write(".");
-                List<Ant> ants = Ant.GenerateAnts(30, handler.CoverRequirements, handler.CoverRequirementsArray);
+                List<Ant> ants = Ant.GenerateAnts(NUM_ANTS, handler.CoverRequirements, handler.CoverRequirementsArray);
                 foreach (var ant in ants)
                 {
                     Console.Write(":");
@@ -74,25 +43,20 @@ namespace ACONRP
                     {
                         //Compute the product between static heuristic and dynamic heuristic
                         var heuristicInformation = handler.ComputeHeuristicInfo(nodes[i], ant.CoverRequirementsArray);
-
                         var selectedIndex = handler.NodeSelection(heuristicInformation, nodes, edges, i);
                         var selectedNode = nodes[i].ElementAt(selectedIndex);
-
-                        ant.Solution.Add(selectedNode);
-                        //ant.CoverRequirements = heuristicInformation[selectedIndex].Item2;
+                        ant.Solution.Add(selectedNode);                        
                         ant.CoverRequirementsArray = heuristicInformation[selectedIndex].Item2;
                     }
 
-                    Tuple<Fitness, int[]> antSolutionApplied = handler.ApplySolution(ant.Solution);                         
+                    Tuple<Fitness, int[]> antSolutionApplied = handler.ApplySolution(ant.Solution);
                     int[] antSolutionUpdatedCoverReq = antSolutionApplied.Item2;
 
                     //Edges update
                     handler.ListOfEdgesUpdate(ant.Solution, edges);
 
                     if (Fitness.FitnessCompare(antSolutionApplied.Item1, mainSolutionFitnessValue) == 1)
-                    {
-                        //Console.WriteLine("Updated cover requirements after solution construction:");
-                        //handler.PrintCoverRequirements(antSolutionUpdatedCoverReq);
+                    {                       
                         mainSolution = ant.Solution;
                         mainSolutionFitnessValue = antSolutionApplied.Item1;
                         consecutiveNoImprovements = 0;
@@ -107,155 +71,39 @@ namespace ACONRP
 
                 handler.GlobalPheromoneUpdate(mainSolution, mainSolutionFitnessValue, edges);
 
-            } while (consecutiveNoImprovements < 30);
+            } while (consecutiveNoImprovements < NO_IMPROVEMENT_LIMIT);
 
-            handler.Evaluator.CalculateSolutionPenalty(mainSolution);            
+            handler.Evaluator.CalculateSolutionPenalty(mainSolution);
             handler.GenerationManager.PrintSolution(mainSolution, mainSolutionFitnessValue);
-            
+
             Console.ReadKey();
-        }
-        
-        private static void NodesOrderInverter(List<Node>[] nodes)
+        }        
+
+        private static List<Node>[] NodeTest()
         {
+            List<Node>[] nodes = new List<Node>[20] {
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+            new List<Node>(),
+        };
 
-            List<Node>[] localNodes = (List<Node>[])nodes.Clone();
-
-            int i = 0;
-            for (int j = localNodes.Length - 1; j >= 0; j--)
-            {
-                nodes[i] = localNodes[j];
-                i++;
-            }            
-        }
-
-        //private static void NodeTest(List<Node>[] nodes)
-        //{
-        //    List<Node> nurse_0_nodes =
-        //        new List<Node>()
-        //        {
-        //            new Node(){Index = 0, NurseId = 0, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, true, false, false, false, false, true},
-        //                    { false, false, true, true, false, true, false},
-        //                    { false, false, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false}
-        //                }
-        //            },
-        //            new Node(){Index = 1, NurseId = 0, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { true, false, false, false, true, true, false},
-        //                    { false, true, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false}
-        //                }
-        //            },
-        //            new Node(){Index = 2, NurseId = 0, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, true, false, false, true, false, false},
-        //                    { false, false, false, true, false, true, false},
-        //                    { true, false, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false}
-        //                }
-        //            }
-
-        //        };
-
-        //    List<Node> nurse_1_nodes =
-        //       new List<Node>()
-        //       {
-        //            new Node(){Index = 0, NurseId = 1, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { true, false, false, false, true, false, false},
-        //                    { false, true, false, false, false, false, false},
-        //                    { false, false, false, false, false, true, true},
-        //                    { false, false, true, false, false, false, false}
-        //                }
-        //            },
-        //            new Node(){Index = 1, NurseId = 1, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, false, true, false, false, false, false},
-        //                    { false, true, false, true, false, false, false},
-        //                    { false, false, false, false, false, true, true},
-        //                    { false, false, false, false, false, false, false}
-        //                }
-        //            },
-        //            new Node(){Index = 2, NurseId = 1, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, false, true, false, true, false, true},
-        //                    { false, false, false, false, false, true, false},
-        //                    { false, true, false, false, false, false, false},
-        //                    { true, false, false, false, false, false, false}
-        //                }
-        //            }
-
-        //       };
-
-        //    List<Node> nurse_2_nodes =
-        //       new List<Node>()
-        //       {
-        //            new Node(){Index = 0, NurseId = 2, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, false, false, false, true, false, false},
-        //                    { false, false, false, true, false, true, true},
-        //                    { true, true, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false}
-        //                }
-        //            },
-        //            new Node(){Index = 1, NurseId = 2, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, true, false, true, false, false, false},
-        //                    { true, false, true, false, true, false, false},
-        //                    { false, false, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false}
-        //                }
-        //            },
-        //            new Node(){Index = 2, NurseId = 2, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, false, false, true, true, true, false},
-        //                    { false, true, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false},
-        //                    { true, false, false, false, false, false, false}
-        //                }
-        //            }
-        //       };
-
-        //    List<Node> nurse_3_nodes =
-        //       new List<Node>()
-        //       {
-        //            new Node(){Index = 0, NurseId = 3, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, true, true, true, false, true, false},
-        //                    { false, false, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false}
-        //                }
-        //            },
-        //            new Node(){Index = 1, NurseId = 3, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, true, false, true, false, true, false},
-        //                    { true, false, true, false, false, false, true},
-        //                    { false, false, false, false, false, false, false},
-        //                    { false, false, false, false, false, false, false}
-        //                }
-        //            },
-        //            new Node(){Index = 2, NurseId = 3, StaticHeuristicInfo = 0,
-        //                ShiftPattern = new bool[4,7]{
-        //                    { false, false, false, false, false, false, false},
-        //                    { true, true, false, false, false, false, false},
-        //                    { false, false, false, true, true, true, false},
-        //                    { false, false, false, false, false, false, false}
-        //                }
-        //            }
-
-        //       };
-        //    nodes[0] = nurse_0_nodes;
-        //    nodes[1] = nurse_1_nodes;
-        //    nodes[2] = nurse_2_nodes;
-        //    nodes[3] = nurse_3_nodes;
-        //}
-
-        private static void NodeTest(List<Node>[] nodes)
-        {
             List<Node> nurse_0_nodes =
                 new List<Node>()
                 {
@@ -374,10 +222,8 @@ namespace ACONRP
                         Index = 0, NurseId = 9, StaticHeuristicInfo = 0,
                         ShiftPatternMatrix = new bool[3,28]{
                             { false,    false,  false,  false,  false,  true,   false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
-                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  true,   true,   false,  false,  false,  true }, 
+                            { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  true,   true,   false,  false,  false,  true },
                             { false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
-
-
                         }
                     }
                 };
@@ -390,8 +236,6 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  true,   true,   false,  false },
                             { false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
-
-
                         }
                     }
                 };
@@ -404,8 +248,6 @@ namespace ACONRP
                             { false,    false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false }
-
-
                         }
                     }
                 };
@@ -418,9 +260,7 @@ namespace ACONRP
                             { false,    false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  true,   true,   false,  false },
                             { false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false }
-
-
-                        }
+                                                    }
                     }
                 };
             List<Node> nurse_13_nodes =
@@ -432,8 +272,6 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   true,   false,  false,  false,  true,   true,   false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
-
-
                         }
                     }
                 };
@@ -446,8 +284,6 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  true,   false,  true,   false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false }
-
-
                         }
                     }
                 };
@@ -460,8 +296,6 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
-
-
                         }
                     }
                 };
@@ -474,8 +308,6 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  true,   false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
-
-
                         }
                     }
                 };
@@ -488,8 +320,6 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  true,   true,   true,   false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false }
-
-
                         }
                     }
                 };
@@ -502,8 +332,6 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false }
-
-
                         }
                     }
                 };
@@ -516,8 +344,6 @@ namespace ACONRP
                             { false,    false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  true,   true,   false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  false,  false,  false,  false,  false,  false,  false,  false },
                             { false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  false,  true,   false,  false,  true,   false,  false,  false,  false,  false,  false }
-
-
                         }
                     }
                 };
@@ -541,133 +367,7 @@ namespace ACONRP
             nodes[17] = nurse_17_nodes;
             nodes[18] = nurse_18_nodes;
             nodes[19] = nurse_19_nodes;
-        }
-
-        private static void NodeTestToy1(List<Node>[] nodes)
-        {
-            List<Node> nurse_0_nodes =
-          new List<Node>()
-                 {
-                     new Node(){Index = 0, NurseId = 0, StaticHeuristicInfo = 0,
-                         ShiftPatternMatrix = new bool[3,7]{
-                             { false, false, false, true, true, false, false},
-                            { true, false, false, false, false, true, true},
-                            { false, true, false, false, false, false, false}
-                         }
-                     },
-          };
-
-            List<Node> nurse_1_nodes =
-        new List<Node>()
-               {
-                     new Node(){Index = 0, NurseId = 1, StaticHeuristicInfo = 0,
-                         ShiftPatternMatrix = new bool[3,7]{
-                             { false, false, false, false, true, false, false},
-                            { true, true, true, false, false, true, true},
-                            { false, false, true, false, false, false, false}
-                         }
-                     },
-        };
-            List<Node> nurse_2_nodes =
-        new List<Node>()
-               {
-                     new Node(){Index = 0, NurseId = 2, StaticHeuristicInfo = 0,
-                         ShiftPatternMatrix = new bool[3,7]{
-                             { false, false, false, false, false, true, true},
-                            { false, true, true, false, false, false, false},
-                            { false, false, false, true, false, false, false}
-                         }
-                     },
-        };
-            List<Node> nurse_3_nodes =
-        new List<Node>()
-               {
-                     new Node(){Index = 0, NurseId = 3, StaticHeuristicInfo = 0,
-                         ShiftPatternMatrix = new bool[3,7]{
-                             { true, true, false, false, false, true, true},
-                            { false, false, false, true, true, false, false},
-                            { false, false, false, false, true, false, false}
-                         }
-                     },
-        };
-            List<Node> nurse_4_nodes =
-        new List<Node>()
-               {
-                     new Node(){Index = 0, NurseId = 4, StaticHeuristicInfo = 0,
-                         ShiftPatternMatrix = new bool[3,7]{
-                             { true, false, true, false, false, false, false},
-                            { false, false, false, true, true, false, false},
-                            { true, false, false, false, false, false, false}
-                         }
-                     },
-        };
-            List<Node> nurse_5_nodes =
-        new List<Node>()
-               {
-                     new Node(){Index = 0, NurseId = 5, StaticHeuristicInfo = 0,
-                         ShiftPatternMatrix = new bool[3,7]{
-                             { false, true, true, true, false, false, false},
-                            { false, false, false, false, false, false, false},
-                            { false, false, false, false, false, true, true}
-                         }
-                     },
-        };
-
-            nodes[0] = nurse_0_nodes;
-            nodes[1] = nurse_1_nodes;
-            nodes[2] = nurse_2_nodes;
-            nodes[3] = nurse_3_nodes;
-            nodes[4] = nurse_4_nodes;
-            nodes[5] = nurse_5_nodes;
-
-        }
-
-        private static List<Node> ACOAlgorithm()
-        {
-            //Inizio algoritmo
-            //***1.
-            List<Node> mainSolution = new List<Node>();
-            List<Edge> edgeList = new List<Edge>();
-
-            //***2.
-            //Chiamata procedura di generazione dell'insieme di nodi che rappresentano gli shift pattern validi
-            //List<Node>[] nodesA = GenerationManager.PatternGenerationMethod();
-
-            //***3 - Fabrizio B.
-            // ComputeStaticHeuristic(nodesA);
-
-            //***4
-            //  mainSolution = GetSolution(nodesA);
-
-            //***5 - da agganciare Alessandro,  inserire metodo apposito per il calcolo della staticSolutionFitness
-            //InitLocalPheromone(double staticSolutionFitness);
-
-            do
-            {
-                List<Ant> ants = new List<Ant>(1000);
-                foreach (Ant ant in ants)
-                {
-                    // for (int i = 0; i < GenerationManager.numberOfNurses; i++)
-                    {
-                        // double[] nurseHeuristic = MetodoCalcoloEuristica(nodesA[i]);
-                        // Node tempNode = MetodoSceltaDelNodo(nurseHeuristic, edgeList);
-                        // ant.Solution.Add(tempNode);
-                    }
-                    if (MetodoComparazioneSoluzioneMigliore(mainSolution, ant.Solution))
-                    {
-                        mainSolution = ant.Solution;
-                        //***C - da agganciare Alessandro
-                        //UpdateLocalPheromone(mainSolution, epsy);
-                    }
-                }
-                //***II - da agganciare Alessandro, inserire metodo apposito per il calcolo della bsfSolutionFitness
-                //UpdateGlobalPheromone(mainSolution, bsfSolutionFitness, rho);
-            }
-            while (VerificaVincoli());
-
-            return mainSolution;
-            //Fine algoritmo
-        }
-
+            return nodes;
+        }        
     }
 }

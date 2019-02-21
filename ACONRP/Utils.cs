@@ -25,5 +25,25 @@ namespace ACONRP
                 array[i] = matrix[i, column];
             return array;
         }
+
+        private static void NodesOrderInverter(List<Node>[] nodes)
+        {
+            List<Node>[] localNodes = (List<Node>[])nodes.Clone();
+
+            int i = 0;
+            for (int j = localNodes.Length - 1; j >= 0; j--)
+            {
+                nodes[i] = localNodes[j];
+                i++;
+            }
+        }
+
+        public static int DateOffset(DateTime start, DateTime date)
+        {
+            TimeSpan interval = ((Convert.ToDateTime(date) - Convert.ToDateTime(start)));
+            int nrOfDays = (interval.Days) + 1;
+
+            return nrOfDays;
+        }
     }
 }

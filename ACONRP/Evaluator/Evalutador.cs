@@ -11,8 +11,7 @@ namespace ACONRP.Evaluator
     public class Evalutador
     {
         public ScheduleEvaluator scheduleEvaluator;
-        private List<Condition> conditions;
-        public List<Violation> violations;
+        private List<Condition> conditions;        
         SchedulingPeriod inputDataLocal;
         int numUnits;
         int numDays;
@@ -32,8 +31,7 @@ namespace ACONRP.Evaluator
             DateTime startDate = Convert.ToDateTime(inputDataLocal.StartDate);
             DateTime endDate = Convert.ToDateTime(inputDataLocal.EndDate);
             numDays = endDate.Day - startDate.Day + 1;
-            conditions = new List<Condition>();
-            violations = new List<Violation>();
+            conditions = new List<Condition>();            
             firstSaturday = GetFirstSaturday(startDate, endDate);
             numWeekends = GetNumWeekends(firstSaturday, startDate, endDate);
         }
@@ -81,8 +79,7 @@ namespace ACONRP.Evaluator
             List<DayOff> dayOffRequests = inputDataLocal.DayOffRequests.DayOff.Where(day => day.EmployeeID == employeeId.ToString()).ToList();
             List<ShiftOff> shiftOffRequests = inputDataLocal.ShiftOffRequests.ShiftOff.Where(shift => shift.EmployeeID == employeeId.ToString()).ToList();
             DateTime startDate = Convert.ToDateTime(inputDataLocal.StartDate);
-
-
+            
             Condition c;
             c = new MaxAndMinConsecutiveWorkingDaysCondition(numUnits, numDays, contract);
             conditions.Add(c);
@@ -113,55 +110,14 @@ namespace ACONRP.Evaluator
 
             // ADD UNWANTED PATTERNS
             List<Condition> conds = PatternConditionBuilder.BuildPatternCondition(numUnits, numDays, contract, patterns, shiftTypesDict, numWeekends);
-            conditions.AddRange(conds);
-
-            //buildSTSTST_Any/buildFWW_Fixed
+            conditions.AddRange(conds);            
 
             //c = new RequestedShiftOnCondition(numUnits, numDays, contract);
             //conditions.Add(c);
 
             //c = new AlternativeSkillCondition(numUnits, numDays, contract);
-            //conditions.Add(c);
-
-            // ADD UNWANTED SHIFTS
-
-            //ShiftType night = getEmployee().getSchedulingPeriod().shiftTypes.get(("N"));
-            //conds = TwoFreeDaysAfterANightShiftConditionBuilder.buildCondition(getEmployee(), getEmployee().getSchedulingPeriod(), night);
-            //conditions.addAll(conds);
-        }
-
-
-        public List<int> CalculatePenalty(List<Node> nodesToEvaluate)
-        {
-            //int cost = 0;            
-            List<int> costs = new List<int>();
-            scheduleEvaluator = new ScheduleEvaluator(inputDataLocal);
-            if (nodesToEvaluate == null) throw new NullReferenceException();
-            conditions.Clear();
-            BuildConditionsList(nodesToEvaluate[0].NurseId);
-            int median = 0;
-            foreach (Node node in nodesToEvaluate)
-            {
-                int nodeCost = 0;
-                nodeCost = scheduleEvaluator.GetCost(node, conditions);
-                node.Cost = nodeCost;
-                node.StaticHeuristicInfo = 1.0 / (1.0 + nodeCost);
-
-                costs.Add(nodeCost);
-                median++;
-                //PrintSingleShiftPattern(nodeToEvaluate);
-            }
-
-            //DEBUG: Prints total cost of soft constraint violation per node.
-            //foreach (Violation viol in violations)
-            //{
-            //    string g = viol.ToString();
-            //    Console.WriteLine(g);
-            //}
-
-            //Console.WriteLine("Soft Constraint ShiftPatterns Violation for nurse: " + nodesToEvaluate[0].NurseId + " = " + cost + " , Average Cost = " + (cost/median));
-            return costs;
-        }
+            //conditions.Add(c);           
+        }        
         /// <summary>
         /// Calculate penalty and cost of a single node
         /// </summary>
@@ -184,19 +140,6 @@ namespace ACONRP.Evaluator
                 int nodeCost = scheduleEvaluator.GetCost(node, conditions, enableViolTracking);
             }
         }
-
-        public List<string> GetNodeViolations(int nurseID, int nodeIndex)
-        {
-            List<string> nodeViolations = new List<string>();
-            List<Violation> violationOfNode = violations.Where(gigi => gigi.NodeNurseId == nurseID && gigi.NodeIndex == nodeIndex).ToList();
-            foreach (Violation viol in violationOfNode)
-            {
-                string strViol = viol.ToString();
-                nodeViolations.Add(strViol);
-            }
-            return nodeViolations;
-        }
-
         private void PrintSingleShiftPattern(Node nodeToEvaluate)
         {
             {
