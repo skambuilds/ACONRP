@@ -1,7 +1,7 @@
 # ACO-NRP
 An Ant Colony Optimization Algorithm For Nurse Rostering Problem
 
-## Instruction
+## Instructions
 1. Clone or download the repository;
 1. Open the ACONRP.sln file with Visual Studio 2015 or later;
 1. Run the project.
